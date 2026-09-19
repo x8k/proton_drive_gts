@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# GoogleTakeout 
+
+google_takeout_metadata/
+Google*/
+*.lst
+example.json
