@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=line-too-long,import-outside-toplevel,redefined-outer-name,reimported,unused-import,unused-variable,unused-wildcard-import,wildcard-import,too-many-lines,unspecified-encoding
-"""Test per proton_drive_gts.py."""
+"""Tests for proton_drive_gts.py."""
 
 import json
 import os
@@ -16,75 +16,75 @@ import proton_drive_gts as sc
 
 
 class TestNormalizeDate(unittest.TestCase):
-    """Test per normalize_date."""
+    """Tests for normalize_date."""
 
     def test_normalize_date_valid_iso(self):
-        """Test: formato ISO standard."""
+        """Test: ISO format."""
         result = sc.normalize_date("2024-01-15 14:30:00")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_normalize_date_valid_italian(self):
-        """Test: formato con mesi italiani."""
+        """Test: Italian month format."""
         result = sc.normalize_date("15 gen 2024 14:30:00")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_normalize_date_valid_english(self):
-        """Test: formato con mesi inglesi."""
+        """Test: English month format."""
         result = sc.normalize_date("15 Jan 2024 14:30:00")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_normalize_date_with_utc(self):
-        """Test: rimuove suffix UTC."""
+        """Test: removes UTC suffix."""
         result = sc.normalize_date("2024-01-15 14:30:00 UTC")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_normalize_date_with_timezone(self):
-        """Test: rimuove timezone offset."""
+        """Test: removes timezone offset."""
         result = sc.normalize_date("2024-01-15 14:30:00+02:00")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_normalize_date_none(self):
-        """Test: None in input."""
+        """Test: None as input."""
         result = sc.normalize_date(None)
         self.assertIsNone(result)
 
     def test_normalize_date_empty(self):
-        """Test: stringa vuota."""
+        """Test: empty string."""
         result = sc.normalize_date("")
         self.assertIsNone(result)
 
     def test_normalize_date_invalid(self):
-        """Test: data non valida."""
+        """Test: invalid date."""
         result = sc.normalize_date("not-a-date")
         self.assertIsNone(result)
 
 
 class TestGetExifDate(unittest.TestCase):
-    """Test per get_exif_date."""
+    """Tests for get_exif_date."""
 
     def test_get_exif_date_nonexistent_file(self):
-        """Test: file non esistente."""
+        """Test: non-existent file."""
         result = sc.get_exif_date("/nonexistent/file.jpg")
         self.assertEqual(result, (None, False))
 
 
 class TestGetJsonDate(unittest.TestCase):
-    """Test per get_json_date."""
+    """Tests for get_json_date."""
 
     def setUp(self):
-        """Crea file temporanei."""
+        """Create temporary files."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_json_date_with_valid_json(self):
-        """Test: file JSON valido con photoTakenTime."""
+        """Test: file valid JSON with photoTakenTime."""
         json_file = Path("test.jpg.supplemental-metadata.json")
         json_file.write_text(
             json.dumps({
@@ -97,7 +97,7 @@ class TestGetJsonDate(unittest.TestCase):
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_get_json_date_with_italian_month(self):
-        """Test: JSON con mese in italiano."""
+        """Test: JSON with Italian month."""
         json_file = Path("test.jpg.supplemental-metadata.json")
         json_file.write_text(
             json.dumps({
@@ -110,12 +110,12 @@ class TestGetJsonDate(unittest.TestCase):
         self.assertEqual(result, "2024-01-15 12:00:00")
 
     def test_get_json_date_nonexistent_json(self):
-        """Test: file JSON non esistente."""
+        """Test: non-existent JSON file."""
         result = sc.get_json_date("nonexistent.jpg")
         self.assertIsNone(result)
 
     def test_get_json_date_invalid_json(self):
-        """Test: JSON non valido."""
+        """Test: invalid JSON."""
         json_file = Path("test.jpg.supplemental-metadata.json")
         json_file.write_text("{ invalid json")
         result = sc.get_json_date("test.jpg")
@@ -123,53 +123,53 @@ class TestGetJsonDate(unittest.TestCase):
 
 
 class TestExtractDateFromFilename(unittest.TestCase):
-    """Test per extract_date_from_filename."""
+    """Tests for extract_date_from_filename."""
 
     def test_google_photos_format(self):
-        """Test: formato Google Foto _YYYY-MM-DD_at_HH.MM.SS."""
+        """Test: Google Photos format _YYYY-MM-DD_at_HH.MM.SS."""
         result = sc.extract_date_from_filename("IMG_2024-01-15_at_14.30.00.jpg")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_whatsapp_format(self):
-        """Test: formato WhatsApp -YYYYMMDD-WA."""
+        """Test: WhatsApp format -YYYYMMDD-WA."""
         result = sc.extract_date_from_filename("IMG-20240115-WA0001.jpg")
         self.assertEqual(result, "2024-01-15 12:00:00")
 
     def test_yyymmdd_hhmmss_format(self):
-        """Test: formato YYYYMMDD_HHMMSS."""
+        """Test: YYYYMMDD format_HHMMSS."""
         result = sc.extract_date_from_filename("20240115_143000.jpg")
         self.assertEqual(result, "2024-01-15 14:30:00")
 
     def test_yyyy_mm_dd_format(self):
-        """Test: formato YYYY-MM-DD."""
+        """Test: YYYY-MM-DD format."""
         result = sc.extract_date_from_filename("2024-01-15_photo.jpg")
         self.assertEqual(result, "2024-01-15 12:00:00")
 
     def test_no_date(self):
-        """Test: nome file senza data."""
+        """Test: filename without date."""
         result = sc.extract_date_from_filename("photo.jpg")
         self.assertIsNone(result)
 
 
 class TestExtractDateFromFolder(unittest.TestCase):
-    """Test per extract_date_from_folder."""
+    """Tests for extract_date_from_folder."""
 
     def test_folder_with_year(self):
-        """Test: cartella con formato 'Foto da YYYY'."""
+        """Test: folder with format 'Foto da YYYY'."""
         result = sc.extract_date_from_folder("/path/Foto da 2024/photo.jpg")
         self.assertEqual(result, "2024-01-01 12:00:00")
 
     def test_folder_without_year(self):
-        """Test: cartella senza formato year."""
+        """Test: folder without format year."""
         result = sc.extract_date_from_folder("/path/Other/photo.jpg")
         self.assertIsNone(result)
 
 
 class TestGetCurrentFileDate(unittest.TestCase):
-    """Test per get_current_file_date."""
+    """Tests for get_current_file_date."""
 
     def setUp(self):
-        """Crea file temporaneo."""
+        """Create temporary file."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "test.txt"
         self.test_file.touch()
@@ -177,30 +177,30 @@ class TestGetCurrentFileDate(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_current_file_date_exists(self):
-        """Test: file esistente."""
+        """Test: existing file."""
         result = sc.get_current_file_date(str(self.test_file))
-        # Dovrebbe restituire una data valida
+        # Should return a valid date
         self.assertIsNotNone(result)
-        # Formato corretto
+        # Correct format
         self.assertRegex(result, r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
 
     def test_get_current_file_date_nonexistent(self):
-        """Test: file non esistente."""
+        """Test: non-existent file."""
         result = sc.get_current_file_date("/nonexistent/file.txt")
         self.assertIsNone(result)
 
 
 class TestSetFileCreationDate(unittest.TestCase):
-    """Test per set_file_creation_date."""
+    """Tests for set_file_creation_date."""
 
     def setUp(self):
-        """Crea file temporaneo."""
+        """Create temporary file."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "test.txt"
         self.test_file.touch()
@@ -208,20 +208,20 @@ class TestSetFileCreationDate(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_set_file_creation_date_success(self):
-        """Test: imposta data con successo."""
+        """Test: sets date successfully."""
         success, error = sc.set_file_creation_date(str(self.test_file), "2024-01-15 12:00:00")
         self.assertTrue(success)
         self.assertIsNone(error)
 
 
 class TestResolveCreationDate(unittest.TestCase):
-    """Test per resolve_creation_date."""
+    """Tests for resolve_creation_date."""
 
     def setUp(self):
         """Prepara ambiente test."""
@@ -230,13 +230,13 @@ class TestResolveCreationDate(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_resolve_creation_date_from_filename(self):
-        """Test: data dal nome file."""
+        """Test: date from filename."""
         test_file = Path("2024-01-15_photo.jpg")
         test_file.touch()
         result, source = sc.resolve_creation_date(str(test_file), "2024-01-15_photo.jpg")
@@ -244,7 +244,7 @@ class TestResolveCreationDate(unittest.TestCase):
         self.assertEqual(source, "FILENAME used")
 
     def test_resolve_creation_date_from_folder(self):
-        """Test: data dal nome cartella."""
+        """Test: date from folder name."""
         subdir = Path("Foto da 2024")
         subdir.mkdir()
         test_file = subdir / "photo.jpg"
@@ -263,7 +263,7 @@ class TestResolveCreationDate(unittest.TestCase):
 
 
 class TestBuildOutputLine(unittest.TestCase):
-    """Test per build_output_line."""
+    """Tests for build_output_line."""
 
     def test_build_output_line_full(self):
         """Test: tutte le informazioni presenti."""
@@ -293,15 +293,15 @@ class TestBuildOutputLine(unittest.TestCase):
 
 
 class TestReadFileList(unittest.TestCase):
-    """Test per la funzione read_file_list."""
+    """Tests for la funzione read_file_list."""
 
     def setUp(self):
-        """Crea file temporanei per i test."""
+        """Create temporary files per i test."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "test_list.lst"
 
     def tearDown(self):
-        """Pulisce i file temporanei."""
+        """Clean i temporary files."""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
@@ -326,16 +326,16 @@ class TestReadFileList(unittest.TestCase):
         self.assertEqual(result, ["foto1.jpg", "foto2.png"])
 
     def test_read_file_list_nonexistent_file(self):
-        """Test: file non esistente solleva errore."""
+        """Test: non-existent file solleva errore."""
         with self.assertRaises(FileNotFoundError):
             sc.read_file_list("/nonexistent/path/file.lst")
 
 
 class TestFindFilesByNames(unittest.TestCase):
-    """Test per la funzione find_files_by_names."""
+    """Tests for la funzione find_files_by_names."""
 
     def setUp(self):
-        """Crea struttura file temporanea per test."""
+        """Create struttura file temporanea per test."""
         self.temp_dir = tempfile.mkdtemp()
 
         Path(self.temp_dir, "foto1.jpg").touch()
@@ -350,7 +350,7 @@ class TestFindFilesByNames(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -362,7 +362,7 @@ class TestFindFilesByNames(unittest.TestCase):
         self.assertEqual(len([f for f in result if "foto1.jpg" in f]), 2)
 
     def test_find_files_by_names_no_match(self):
-        """Test: nessun file trovato."""
+        """Test: no files found."""
         result = sc.find_files_by_names(["nonexistent.jpg"])
         self.assertEqual(result, [])
 
@@ -373,10 +373,10 @@ class TestFindFilesByNames(unittest.TestCase):
 
 
 class TestCollectFiles(unittest.TestCase):
-    """Test per la funzione collect_files."""
+    """Tests for la funzione collect_files."""
 
     def setUp(self):
-        """Crea struttura file temporanea."""
+        """Create struttura file temporanea."""
         self.temp_dir = tempfile.mkdtemp()
 
         Path(self.temp_dir, "foto1.jpg").touch()
@@ -390,7 +390,7 @@ class TestCollectFiles(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -410,7 +410,7 @@ class TestCollectFiles(unittest.TestCase):
 
 
 class TestSetExifCreationDate(unittest.TestCase):
-    """Test per set_exif_creation_date."""
+    """Tests for set_exif_creation_date."""
 
     def test_set_exif_creation_date_calls_exiftool(self):
         """Test: verifica che chiami exiftool con i parametri corretti."""
@@ -452,11 +452,11 @@ class TestSetExifCreationDate(unittest.TestCase):
             self.assertIsNotNone(error)
 
 
-class TestExifVerification(unittest.TestCase):
-    """Test per la verifica dei tag EXIF dopo la modifica."""
+class TestExifVerifytion(unittest.TestCase):
+    """Tests for la verifica dei tag EXIF dopo la modifica."""
 
     def setUp(self):
-        """Crea file temporanei."""
+        """Create temporary files."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "test.jpg"
         self.test_file.touch()
@@ -465,7 +465,7 @@ class TestExifVerification(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -502,11 +502,11 @@ class TestExifVerification(unittest.TestCase):
         from unittest.mock import MagicMock
         from io import StringIO
 
-        # Prima chiamata (resolve_creation_date): restituisce la data che vogliamo impostare
-        # Seconda chiamata (verifica): restituisce una data DIVERSA
+        # First call (resolve_creation_date): returns the date we want to set
+        # Second call (verification): returns a DIFFERENT date
         mock_get_exif.side_effect = [
             ("2024-01-01 12:00:00", True),  # creation_date
-            ("2023-01-01 12:00:00", True),  # data dopo modifica (diversa)
+            ("2023-01-01 12:00:00", True),  # date after modification (different)
         ]
         mock_run.return_value = MagicMock(stdout="", stderr="", returncode=0)
         mock_get_current.return_value = "2024-01-01 12:00:00"
@@ -525,10 +525,10 @@ class TestExifVerification(unittest.TestCase):
 
 
 class TestBothSetters(unittest.TestCase):
-    """Test per verifica che entrambi i setter (EXIF e filesystem) vengano chiamati."""
+    """Tests for verifica che entrambi i setter (EXIF e filesystem) vengano chiamati."""
 
     def setUp(self):
-        """Crea file temporanei."""
+        """Create temporary files."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "2024-01-15_test.jpg"
         self.test_file.touch()
@@ -538,7 +538,7 @@ class TestBothSetters(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -600,10 +600,10 @@ class TestBothSetters(unittest.TestCase):
 
 
 class TestDryRun(unittest.TestCase):
-    """Test per la modalita' --dry-run."""
+    """Tests for la modalita' --dry-run."""
 
     def setUp(self):
-        """Crea file temporaneo."""
+        """Create temporary file."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "test.jpg"
         self.test_file.touch()
@@ -611,7 +611,7 @@ class TestDryRun(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -637,7 +637,7 @@ class TestDryRun(unittest.TestCase):
         from unittest.mock import patch
         from io import StringIO
 
-        # Crea file con data nel nome
+        # Create file with date in name
         test_file_with_date = Path(self.temp_dir) / "2024-01-15_test.jpg"
         test_file_with_date.touch()
 
@@ -654,10 +654,10 @@ class TestDryRun(unittest.TestCase):
 
 
 class TestLogFile(unittest.TestCase):
-    """Test per il file di log."""
+    """Tests for il file di log."""
 
     def setUp(self):
-        """Crea file temporanei."""
+        """Create temporary files."""
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = Path(self.temp_dir) / "2024-01-15_test.jpg"
         self.test_file.touch()
@@ -666,7 +666,7 @@ class TestLogFile(unittest.TestCase):
         os.chdir(self.temp_dir)
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -691,7 +691,7 @@ class TestLogFile(unittest.TestCase):
 
         self.assertEqual(len(lines), 2)
         header = lines[0].strip()
-        self.assertEqual(header, "timestamp,log_level,operazione,file,tipo_data_usata,data_originale,data_nuova")
+        self.assertEqual(header, "timestamp,log_level,operation,file,date_type_used,original_date,new_date")
 
     def test_log_level_info_on_success(self):
         """Test: log level INFO per operazioni di successo."""
@@ -720,14 +720,14 @@ class TestLogFile(unittest.TestCase):
         """Test: file in modalita' append."""
         from io import StringIO
 
-        # Prima esecuzione
+        # First execution
         with patch("sys.argv", ["proton_drive_gts.py", "--set"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
 
         first_size = self.log_file.stat().st_size
 
-        # Seconda esecuzione
+        # Second execution
         with patch("sys.argv", ["proton_drive_gts.py", "--set"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
@@ -761,7 +761,7 @@ class TestLogFile(unittest.TestCase):
 
 
 class TestCtrlC(unittest.TestCase):
-    """Test per la gestione di Ctrl+C (SIGINT)."""
+    """Tests for la gestione di Ctrl+C (SIGINT)."""
 
     @patch("signal.signal")
     def test_ctrl_c_handler_registered(self, mock_signal):
@@ -769,7 +769,7 @@ class TestCtrlC(unittest.TestCase):
         import importlib
         importlib.reload(sc)
 
-        # Verifica che signal.signal sia stato chiamato per SIGINT
+        # Verify that signal.signal was called for SIGINT
         self.assertTrue(any(
             call[0][0] == signal.SIGINT
             for call in mock_signal.call_args_list
@@ -777,27 +777,27 @@ class TestCtrlC(unittest.TestCase):
 
 
 class TestMoveJson(unittest.TestCase):
-    """Test per lo switch --move-json."""
+    """Tests for lo switch --move-json."""
 
     def setUp(self):
-        """Crea struttura temporanea per test."""
+        """Create struttura temporanea per test."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
 
-        # Crea directory simile a Google Foto
+        # Create directory similar to Google Photos
         Path("Google Foto").mkdir()
         Path("Google Foto/subdir1").mkdir()
         Path("Google Foto/subdir2").mkdir()
         Path("Google Photo").mkdir()
 
-        # Crea file JSON
+        # Create JSON files
         Path("Google Foto/file1.jpg.supplemental-metadata.json").touch()
         Path("Google Foto/subdir1/file2.jpg.supplemental-metadata.json").touch()
         Path("Google Photo/file3.jpg.supplemental-metadata.json").touch()
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -831,7 +831,7 @@ class TestMoveJson(unittest.TestCase):
         data_file = Path("google_takeout_metadata/data.lst")
         content = data_file.read_text()
 
-        # Verifica che ci siano le righe attese
+        # Verify that expected lines exist
         expected_entries = [
             "Google Foto/file1.jpg.supplemental-metadata.json",
             "Google Foto/subdir1/file2.jpg.supplemental-metadata.json",
@@ -843,14 +843,14 @@ class TestMoveJson(unittest.TestCase):
 
     def test_move_json_dry_run_does_not_move_files(self):
         """Test: --move-json --dry-run NON spostano i file JSON."""
-        # Memorizza i path originali
+        # Store original paths
         original_json_files = [
             Path("Google Foto/file1.jpg.supplemental-metadata.json"),
             Path("Google Foto/subdir1/file2.jpg.supplemental-metadata.json"),
             Path("Google Photo/file3.jpg.supplemental-metadata.json"),
         ]
 
-        # Verifica che esistano
+        # Verify they exist
         for f in original_json_files:
             self.assertTrue(f.exists())
 
@@ -859,11 +859,11 @@ class TestMoveJson(unittest.TestCase):
                 sc.main()
                 output = mock_stdout.getvalue()
 
-        # Verifica che i file NON siano stati spostati
+        # Verify files were NOT moved
         for f in original_json_files:
-            self.assertTrue(f.exists(), f"File {f} è stato spostato, ma non avrebbe dovuto")
+            self.assertTrue(f.exists(), f"File {f} was moved but should not have been")
 
-        # Verifica che l'output contenga DRY-RUN
+        # Verify output contains DRY-RUN
         self.assertIn("DRY-RUN", output)
 
     def test_move_json_dry_run_shows_actions(self):
@@ -873,30 +873,30 @@ class TestMoveJson(unittest.TestCase):
                 sc.main()
                 output = mock_stdout.getvalue()
 
-        # Verifica che mostri le azioni di spostamento
+        # Verify it shows move actions
         self.assertIn("DRY-RUN", output)
-        self.assertIn("->", output)  # Simbolo di spostamento
+        self.assertIn("->", output)  # Move symbol
 
     def test_rollback_json_dry_run_does_not_move_files(self):
         """Test: --rollback-json --dry-run NON spostano i file JSON."""
-        # Crea la directory google_takeout_metadata con file JSON
+        # Create google_takeout_metadata directory with JSON files
         metadata_dir = Path("google_takeout_metadata")
         metadata_dir.mkdir()
         Path(metadata_dir, "file1.jpg.supplemental-metadata.json").touch()
         Path(metadata_dir, "file2.jpg.supplemental-metadata.json").touch()
 
-        # Crea data.lst
+        # Create data.lst
         data_file = metadata_dir / "data.lst"
         data_file.write_text('"Google Foto/file1.jpg.supplemental-metadata.json" "file1.jpg.supplemental-metadata.json"\n')
         data_file.write_text('"Google Foto/file2.jpg.supplemental-metadata.json" "file2.jpg.supplemental-metadata.json"\n')
 
-        # Memorizza i path
+        # Store paths
         json_files_in_metadata = [
             Path(metadata_dir, "file1.jpg.supplemental-metadata.json"),
             Path(metadata_dir, "file2.jpg.supplemental-metadata.json"),
         ]
 
-        # Verifica che esistano
+        # Verify they exist
         for f in json_files_in_metadata:
             self.assertTrue(f.exists())
 
@@ -905,21 +905,21 @@ class TestMoveJson(unittest.TestCase):
                 sc.main()
                 output = mock_stdout.getvalue()
 
-        # Verifica che i file NON siano stati spostati
+        # Verify files were NOT moved
         for f in json_files_in_metadata:
-            self.assertTrue(f.exists(), f"File {f} è stato spostato, ma non avrebbe dovuto")
+            self.assertTrue(f.exists(), f"File {f} was moved but should not have been")
 
-        # Verifica che l'output contenga DRY-RUN
+        # Verify output contains DRY-RUN
         self.assertIn("DRY-RUN", output)
 
     def test_rollback_json_dry_run_shows_actions(self):
         """Test: --rollback-json --dry-run mostra le azioni che verranno eseguite."""
-        # Crea la directory google_takeout_metadata con file JSON
+        # Create google_takeout_metadata directory with JSON files
         metadata_dir = Path("google_takeout_metadata")
         metadata_dir.mkdir()
         Path(metadata_dir, "file1.jpg.supplemental-metadata.json").touch()
 
-        # Crea data.lst
+        # Create data.lst
         data_file = metadata_dir / "data.lst"
         data_file.write_text('"Google Foto/file1.jpg.supplemental-metadata.json" "file1.jpg.supplemental-metadata.json"\n')
 
@@ -928,20 +928,20 @@ class TestMoveJson(unittest.TestCase):
                 sc.main()
                 output = mock_stdout.getvalue()
 
-        # Verifica che mostri le azioni di rollback
+        # Verify che mostri le azioni di rollback
         self.assertIn("DRY-RUN", output)
         self.assertIn("->", output)
 
     def test_move_json_moves_files_to_metadata_dir(self):
         """Test: --move-json SENZA dry-run sposta effettivamente i file JSON in google_takeout_metadata/."""
-        # Memorizza i path originali
+        # Store original paths
         original_json_files = [
             Path("Google Foto/file1.jpg.supplemental-metadata.json"),
             Path("Google Foto/subdir1/file2.jpg.supplemental-metadata.json"),
             Path("Google Photo/file3.jpg.supplemental-metadata.json"),
         ]
 
-        # Verifica che esistano
+        # Verify they exist
         for f in original_json_files:
             self.assertTrue(f.exists())
 
@@ -949,33 +949,33 @@ class TestMoveJson(unittest.TestCase):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
 
-        # Verifica che i file siano stati spostati in google_takeout_metadata/
+        # Verify che i file siano stati spostati in google_takeout_metadata/
         metadata_dir = Path("google_takeout_metadata")
         for f in original_json_files:
             moved_file = metadata_dir / f.name
-            self.assertTrue(moved_file.exists(), f"File {f} NON è stato spostato in {moved_file}")
-            self.assertFalse(f.exists(), f"File {f} è ancora nella posizione originale")
+            self.assertTrue(moved_file.exists(), f"File {f} was NOT moved to {moved_file}")
+            self.assertFalse(f.exists(), f"File {f} is still in original position")
 
     def test_rollback_json_restores_files(self):
         """Test: --rollback-json SENZA dry-run ripristina effettivamente i file JSON."""
-        # Crea la directory google_takeout_metadata con file JSON UNIVOCI
+        # Create google_takeout_metadata directory with JSON files UNIVOCI
         metadata_dir = Path("google_takeout_metadata")
         metadata_dir.mkdir(exist_ok=True)
-        # Usa nomi file univoci per evitare conflitti con setUp
+        # Use unique filenames to avoid conflicts with setUp
         Path(metadata_dir, "rollback_test_file1.json").touch()
         Path(metadata_dir, "rollback_test_file2.json").touch()
 
-        # Crea directory di destinazione univoca
+        # Create directory di destinazione univoca
         unique_dir = Path("RollbackTestDir")
         unique_dir.mkdir(exist_ok=True)
 
-        # Crea data.lst con path ASSOLUTI (come fa move_json_files)
+        # Create data.lst con path ASSOLUTI (come fa move_json_files)
         data_file = metadata_dir / "data.lst"
         dest_path1 = (unique_dir / "rollback_test_file1.json").resolve()
         dest_path2 = (unique_dir / "rollback_test_file2.json").resolve()
         data_file.write_text(f'"{dest_path1}" "rollback_test_file1.json"\n"{dest_path2}" "rollback_test_file2.json"\n')
 
-        # Verifica che i file siano in metadata_dir
+        # Verify che i file siano in metadata_dir
         self.assertTrue((metadata_dir / "rollback_test_file1.json").exists())
         self.assertTrue((metadata_dir / "rollback_test_file2.json").exists())
 
@@ -983,12 +983,12 @@ class TestMoveJson(unittest.TestCase):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
 
-        # Verifica che i file siano stati ripristinati
-        self.assertTrue(dest_path1.exists(), "File rollback_test_file1.json NON è stato ripristinato")
-        self.assertTrue(dest_path2.exists(), "File rollback_test_file2.json NON è stato ripristinato")
-        # Verifica che non esistano più in metadata_dir
-        self.assertFalse((metadata_dir / "rollback_test_file1.json").exists(), "File rollback_test_file1.json è ancora in metadata_dir")
-        self.assertFalse((metadata_dir / "rollback_test_file2.json").exists(), "File rollback_test_file2.json è ancora in metadata_dir")
+        # Verify che i file siano stati ripristinati
+        self.assertTrue(dest_path1.exists(), "File rollback_test_file1.json was NOT restored")
+        self.assertTrue(dest_path2.exists(), "File rollback_test_file2.json was NOT restored")
+        # Verify that they no longer exist in metadata_dir
+        self.assertFalse((metadata_dir / "rollback_test_file1.json").exists(), "File rollback_test_file1.json is still in metadata_dir")
+        self.assertFalse((metadata_dir / "rollback_test_file2.json").exists(), "File rollback_test_file2.json is still in metadata_dir")
 
     def test_move_json_creates_correct_data_lst_and_moves(self):
         """Test: --move-json crea data.lst corretto E sposta i file."""
@@ -1009,7 +1009,7 @@ class TestMoveJson(unittest.TestCase):
         for entry in expected_entries:
             self.assertIn(entry, content)
 
-        # Verifica che i file siano stati spostati
+        # Verify che i file siano stati spostati
         metadata_dir = Path("google_takeout_metadata")
         for entry in expected_entries:
             filename = Path(entry).name
@@ -1018,10 +1018,10 @@ class TestMoveJson(unittest.TestCase):
 
 
 class TestLoggingMoveAndRollback(unittest.TestCase):
-    """Test per verificare che --move-json e --rollback-json scrivano nel log."""
+    """Tests for verificare che --move-json e --rollback-json scrivano nel log."""
 
     def setUp(self):
-        """Crea struttura temporanea per test."""
+        """Create struttura temporanea per test."""
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
@@ -1034,7 +1034,7 @@ class TestLoggingMoveAndRollback(unittest.TestCase):
             self.log_file.unlink()
 
     def tearDown(self):
-        """Pulisce."""
+        """Clean."""
         os.chdir(self.original_dir)
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)

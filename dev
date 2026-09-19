@@ -1,6 +1,6 @@
 #!/bin/bash
-# Script di sviluppo per proton_drive_gts.py
-# Uso: ./dev [all|test|linter|install]
+# Development script for proton_drive_gts.py
+# Usage: ./dev [all|test|linter|lint|install]
 
 set -e
 
@@ -14,7 +14,7 @@ check_deps() {
 }
 
 install_deps() {
-    echo "=== Installazione Dipendenze ==="
+    echo "=== Installing Dependencies ==="
     python3 -m pip install --break-system-packages -r requirements.txt
 }
 
@@ -26,13 +26,13 @@ ensure_deps() {
 
 run_tests() {
     ensure_deps
-    echo "=== Esecuzione Test ==="
+    echo "=== Running Tests ==="
     python3 -m pytest test_proton_drive_gts.py -v
 }
 
 run_linter() {
     ensure_deps
-    echo "=== Esecuzione Linter (pylint) ==="
+    echo "=== Running Linter (pylint) ==="
     python3 -m pylint proton_drive_gts.py test_proton_drive_gts.py
 }
 
@@ -51,12 +51,12 @@ case "${1:-}" in
         install_deps
         ;;
     *)
-        echo "Uso: $0 [all|test|linter|lint|install]"
-        echo "  all      - Esegui test e linter"
-        echo "  test     - Esegui solo i test"
-        echo "  linter   - Esegui solo pylint"
-        echo "  lint     - Alias di linter"
-        echo "  install  - Installa le dipendenze"
+        echo "Usage: $0 [all|test|linter|lint|install]"
+        echo "  all      - Run tests and linter"
+        echo "  test     - Run tests only"
+        echo "  linter   - Run pylint only"
+        echo "  lint     - Alias for linter"
+        echo "  install  - Install dependencies"
         exit 1
         ;;
 esac

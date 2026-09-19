@@ -1,5 +1,5 @@
-# Dipendenze per lo sviluppo di proton_drive_gts
-# Installare con: pip install -r requirements.txt
+# Development dependencies for proton_drive_gts
+# Install with: pip install -r requirements.txt
 
 # Testing
 pytest>=8.0.0
