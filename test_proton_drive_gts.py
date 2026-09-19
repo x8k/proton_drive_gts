@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=line-too-long,import-outside-toplevel,redefined-outer-name,reimported,unused-import,unused-variable,unused-wildcard-import,wildcard-import,too-many-lines,unspecified-encoding
 """Test per proton_drive_gts.py."""
 
 import json
@@ -336,15 +337,15 @@ class TestFindFilesByNames(unittest.TestCase):
     def setUp(self):
         """Crea struttura file temporanea per test."""
         self.temp_dir = tempfile.mkdtemp()
-        
+
         Path(self.temp_dir, "foto1.jpg").touch()
         Path(self.temp_dir, "foto2.png").touch()
-        
+
         subdir = Path(self.temp_dir) / "subdir"
         subdir.mkdir()
         Path(subdir, "foto1.jpg").touch()
         Path(subdir, "foto3.jpg").touch()
-        
+
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
 
@@ -377,14 +378,14 @@ class TestCollectFiles(unittest.TestCase):
     def setUp(self):
         """Crea struttura file temporanea."""
         self.temp_dir = tempfile.mkdtemp()
-        
+
         Path(self.temp_dir, "foto1.jpg").touch()
         Path(self.temp_dir, "video.mp4").touch()
         Path(self.temp_dir, "script.py").touch()
-        
+
         self.list_file = Path(self.temp_dir) / "filelist.lst"
         self.list_file.write_text("foto1.jpg\nvideo.mp4\n")
-        
+
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
 
@@ -543,10 +544,12 @@ class TestBothSetters(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @patch("proton_drive_gts.get_exif_date")
-    @patch("proton_drive_gts.resolve_creation_date")
+    @patch("proton_drive_gts.resolve_creation_date")  # pylint: disable=line-too-long
     @patch("proton_drive_gts.get_current_file_date")
     @patch("proton_drive_gts.subprocess.run")
-    def test_both_setters_called_with_file_list(self, mock_run, mock_get_current, mock_resolve, mock_get_exif):
+    def test_both_setters_called_with_file_list(
+        self, mock_run, mock_get_current, mock_resolve, mock_get_exif
+    ):
         """Test: verifica che entrambi i setter vengano chiamati con --file-list."""
         from unittest.mock import MagicMock
         from io import StringIO
@@ -556,7 +559,10 @@ class TestBothSetters(unittest.TestCase):
         mock_get_current.return_value = "2024-01-14 10:00:00"
         mock_get_exif.return_value = ("2024-01-15 12:00:00", True)
 
-        with patch("sys.argv", ["proton_drive_gts.py", "--set", "--file-list", str(self.list_file)]):
+        with patch(
+            "sys.argv",
+            ["proton_drive_gts.py", "--set", "--file-list", str(self.list_file)]
+        ):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
 
@@ -567,10 +573,12 @@ class TestBothSetters(unittest.TestCase):
         self.assertTrue(has_touch, "touch non chiamato")
 
     @patch("proton_drive_gts.get_exif_date")
-    @patch("proton_drive_gts.resolve_creation_date")
+    @patch("proton_drive_gts.resolve_creation_date")  # pylint: disable=line-too-long
     @patch("proton_drive_gts.get_current_file_date")
     @patch("proton_drive_gts.subprocess.run")
-    def test_both_setters_called_without_file_list(self, mock_run, mock_get_current, mock_resolve, mock_get_exif):
+    def test_both_setters_called_without_file_list(
+        self, mock_run, mock_get_current, mock_resolve, mock_get_exif
+    ):
         """Test: verifica che entrambi i setter vengano chiamati senza --file-list."""
         from unittest.mock import MagicMock
         from io import StringIO
@@ -694,12 +702,12 @@ class TestLogFile(unittest.TestCase):
              patch("proton_drive_gts.get_current_file_date") as mock_get_current, \
              patch("proton_drive_gts.get_exif_date") as mock_get_exif, \
              patch("proton_drive_gts.subprocess.run") as mock_run:
-            
+
             mock_run.return_value = MagicMock(stdout="", stderr="", returncode=0)
             mock_resolve.return_value = ("2024-01-15 12:00:00", "FILENAME used")
             mock_get_current.return_value = "2024-01-15 12:00:00"
             mock_get_exif.return_value = ("2024-01-15 12:00:00", True)
-            
+
             with patch("sys.argv", ["proton_drive_gts.py", "--set"]):
                 with patch("sys.stdout", new_callable=StringIO):
                     sc.main()
@@ -776,13 +784,13 @@ class TestMoveJson(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
         os.chdir(self.temp_dir)
-        
+
         # Crea directory simile a Google Foto
         Path("Google Foto").mkdir()
         Path("Google Foto/subdir1").mkdir()
         Path("Google Foto/subdir2").mkdir()
         Path("Google Photo").mkdir()
-        
+
         # Crea file JSON
         Path("Google Foto/file1.jpg.supplemental-metadata.json").touch()
         Path("Google Foto/subdir1/file2.jpg.supplemental-metadata.json").touch()
@@ -799,7 +807,7 @@ class TestMoveJson(unittest.TestCase):
         with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
-        
+
         metadata_dir = Path("google_takeout_metadata")
         self.assertTrue(metadata_dir.exists())
         self.assertTrue(metadata_dir.is_dir())
@@ -809,7 +817,7 @@ class TestMoveJson(unittest.TestCase):
         with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
-        
+
         data_file = Path("google_takeout_metadata/data.lst")
         self.assertTrue(data_file.exists())
         self.assertTrue(data_file.is_file())
@@ -819,17 +827,17 @@ class TestMoveJson(unittest.TestCase):
         with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
-        
+
         data_file = Path("google_takeout_metadata/data.lst")
         content = data_file.read_text()
-        
+
         # Verifica che ci siano le righe attese
         expected_entries = [
             "Google Foto/file1.jpg.supplemental-metadata.json",
             "Google Foto/subdir1/file2.jpg.supplemental-metadata.json",
             "Google Photo/file3.jpg.supplemental-metadata.json",
         ]
-        
+
         for entry in expected_entries:
             self.assertIn(entry, content)
 
@@ -841,20 +849,20 @@ class TestMoveJson(unittest.TestCase):
             Path("Google Foto/subdir1/file2.jpg.supplemental-metadata.json"),
             Path("Google Photo/file3.jpg.supplemental-metadata.json"),
         ]
-        
+
         # Verifica che esistano
         for f in original_json_files:
             self.assertTrue(f.exists())
-        
+
         with patch("sys.argv", ["proton_drive_gts.py", "--move-json", "--dry-run"]):
             with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                 sc.main()
                 output = mock_stdout.getvalue()
-        
+
         # Verifica che i file NON siano stati spostati
         for f in original_json_files:
             self.assertTrue(f.exists(), f"File {f} è stato spostato, ma non avrebbe dovuto")
-        
+
         # Verifica che l'output contenga DRY-RUN
         self.assertIn("DRY-RUN", output)
 
@@ -864,7 +872,7 @@ class TestMoveJson(unittest.TestCase):
             with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                 sc.main()
                 output = mock_stdout.getvalue()
-        
+
         # Verifica che mostri le azioni di spostamento
         self.assertIn("DRY-RUN", output)
         self.assertIn("->", output)  # Simbolo di spostamento
@@ -876,31 +884,31 @@ class TestMoveJson(unittest.TestCase):
         metadata_dir.mkdir()
         Path(metadata_dir, "file1.jpg.supplemental-metadata.json").touch()
         Path(metadata_dir, "file2.jpg.supplemental-metadata.json").touch()
-        
+
         # Crea data.lst
         data_file = metadata_dir / "data.lst"
         data_file.write_text('"Google Foto/file1.jpg.supplemental-metadata.json" "file1.jpg.supplemental-metadata.json"\n')
         data_file.write_text('"Google Foto/file2.jpg.supplemental-metadata.json" "file2.jpg.supplemental-metadata.json"\n')
-        
+
         # Memorizza i path
         json_files_in_metadata = [
             Path(metadata_dir, "file1.jpg.supplemental-metadata.json"),
             Path(metadata_dir, "file2.jpg.supplemental-metadata.json"),
         ]
-        
+
         # Verifica che esistano
         for f in json_files_in_metadata:
             self.assertTrue(f.exists())
-        
+
         with patch("sys.argv", ["proton_drive_gts.py", "--rollback-json", "--dry-run"]):
             with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                 sc.main()
                 output = mock_stdout.getvalue()
-        
+
         # Verifica che i file NON siano stati spostati
         for f in json_files_in_metadata:
             self.assertTrue(f.exists(), f"File {f} è stato spostato, ma non avrebbe dovuto")
-        
+
         # Verifica che l'output contenga DRY-RUN
         self.assertIn("DRY-RUN", output)
 
@@ -910,16 +918,16 @@ class TestMoveJson(unittest.TestCase):
         metadata_dir = Path("google_takeout_metadata")
         metadata_dir.mkdir()
         Path(metadata_dir, "file1.jpg.supplemental-metadata.json").touch()
-        
+
         # Crea data.lst
         data_file = metadata_dir / "data.lst"
         data_file.write_text('"Google Foto/file1.jpg.supplemental-metadata.json" "file1.jpg.supplemental-metadata.json"\n')
-        
+
         with patch("sys.argv", ["proton_drive_gts.py", "--rollback-json", "--dry-run"]):
             with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
                 sc.main()
                 output = mock_stdout.getvalue()
-        
+
         # Verifica che mostri le azioni di rollback
         self.assertIn("DRY-RUN", output)
         self.assertIn("->", output)
@@ -932,15 +940,15 @@ class TestMoveJson(unittest.TestCase):
             Path("Google Foto/subdir1/file2.jpg.supplemental-metadata.json"),
             Path("Google Photo/file3.jpg.supplemental-metadata.json"),
         ]
-        
+
         # Verifica che esistano
         for f in original_json_files:
             self.assertTrue(f.exists())
-        
+
         with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
-        
+
         # Verifica che i file siano stati spostati in google_takeout_metadata/
         metadata_dir = Path("google_takeout_metadata")
         for f in original_json_files:
@@ -956,25 +964,25 @@ class TestMoveJson(unittest.TestCase):
         # Usa nomi file univoci per evitare conflitti con setUp
         Path(metadata_dir, "rollback_test_file1.json").touch()
         Path(metadata_dir, "rollback_test_file2.json").touch()
-        
+
         # Crea directory di destinazione univoca
         unique_dir = Path("RollbackTestDir")
         unique_dir.mkdir(exist_ok=True)
-        
+
         # Crea data.lst con path ASSOLUTI (come fa move_json_files)
         data_file = metadata_dir / "data.lst"
         dest_path1 = (unique_dir / "rollback_test_file1.json").resolve()
         dest_path2 = (unique_dir / "rollback_test_file2.json").resolve()
         data_file.write_text(f'"{dest_path1}" "rollback_test_file1.json"\n"{dest_path2}" "rollback_test_file2.json"\n')
-        
+
         # Verifica che i file siano in metadata_dir
         self.assertTrue((metadata_dir / "rollback_test_file1.json").exists())
         self.assertTrue((metadata_dir / "rollback_test_file2.json").exists())
-        
+
         with patch("sys.argv", ["proton_drive_gts.py", "--rollback-json"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
-        
+
         # Verifica che i file siano stati ripristinati
         self.assertTrue(dest_path1.exists(), "File rollback_test_file1.json NON è stato ripristinato")
         self.assertTrue(dest_path2.exists(), "File rollback_test_file2.json NON è stato ripristinato")
@@ -987,26 +995,83 @@ class TestMoveJson(unittest.TestCase):
         with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
             with patch("sys.stdout", new_callable=StringIO):
                 sc.main()
-        
+
         data_file = Path("google_takeout_metadata/data.lst")
         self.assertTrue(data_file.exists())
-        
+
         content = data_file.read_text()
         expected_entries = [
             "Google Foto/file1.jpg.supplemental-metadata.json",
             "Google Foto/subdir1/file2.jpg.supplemental-metadata.json",
             "Google Photo/file3.jpg.supplemental-metadata.json",
         ]
-        
+
         for entry in expected_entries:
             self.assertIn(entry, content)
-        
+
         # Verifica che i file siano stati spostati
         metadata_dir = Path("google_takeout_metadata")
         for entry in expected_entries:
             filename = Path(entry).name
             moved_file = metadata_dir / filename
             self.assertTrue(moved_file.exists(), f"File {filename} NON spostato in {moved_file}")
+
+
+class TestLoggingMoveAndRollback(unittest.TestCase):
+    """Test per verificare che --move-json e --rollback-json scrivano nel log."""
+
+    def setUp(self):
+        """Crea struttura temporanea per test."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+
+        Path("Google Foto").mkdir()
+        Path("Google Foto/file1.jpg.supplemental-metadata.json").touch()
+
+        self.log_file = Path("creation_date.log")
+        if self.log_file.exists():
+            self.log_file.unlink()
+
+    def tearDown(self):
+        """Pulisce."""
+        os.chdir(self.original_dir)
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_move_json_writes_to_log(self):
+        """Test: --move-json scrive nel log creation_date.log."""
+        with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
+            with patch("sys.stdout", new_callable=StringIO):
+                sc.main()
+
+        self.assertTrue(self.log_file.exists(), "Log file non creato")
+
+        with open(self.log_file, "r") as f:
+            content = f.read()
+
+        self.assertIn("MOVE_JSON", content, "Log non contiene operazione MOVE_JSON")
+        self.assertIn("Google Foto", content, "Log non contiene path originale")
+
+    def test_rollback_json_writes_to_log(self):
+        """Test: --rollback-json scrive nel log creation_date.log."""
+        metadata_dir = Path("google_takeout_metadata")
+        metadata_dir.mkdir()
+        Path(metadata_dir, "file1.jpg.supplemental-metadata.json").touch()
+
+        data_file = metadata_dir / "data.lst"
+        data_file.write_text('"Google Foto/file1.jpg.supplemental-metadata.json" "file1.jpg.supplemental-metadata.json"\n')
+
+        with patch("sys.argv", ["proton_drive_gts.py", "--rollback-json"]):
+            with patch("sys.stdout", new_callable=StringIO):
+                sc.main()
+
+        self.assertTrue(self.log_file.exists(), "Log file non creato")
+
+        with open(self.log_file, "r") as f:
+            content = f.read()
+
+        self.assertIn("ROLLBACK_JSON", content, "Log non contiene operazione ROLLBACK_JSON")
 
 
 if __name__ == "__main__":
