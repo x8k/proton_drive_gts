@@ -3,11 +3,16 @@
 
 Copyright (C) 2026
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 2 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this
+program. If not, see <https://www.gnu.org/licenses/>.
 
 Priorita: EXIF -> JSON -> Nome File -> Nome Cartella
 Uso: python proton_drive_gts.py [--find-missing] [--set] [--exif-files FILELIST] [--dry-run]
@@ -25,7 +30,8 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 
-def handle_interrupt(signum, frame):
+def handle_interrupt(_signum, _frame):
+    """Handler per SIGINT. Gestisce l'interruzione da Ctrl+C."""
     print("\nInterrotto dall'utente. Uscita pulita.")
     sys.exit(0)
 
@@ -35,6 +41,7 @@ signal.signal(signal.SIGINT, handle_interrupt)
 LOG_FILE = "creation_date.log"
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 def write_log(
     log_level: str,
     operazione: str,
@@ -43,13 +50,17 @@ def write_log(
     old_date: Optional[str],
     new_date: Optional[str],
 ):
+    """Scrive una riga nel file di log creation_date.log."""
     header = (
         "timestamp,log_level,operazione,file,tipo_data_usata,data_originale,data_nuova"
     )
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"{timestamp},{log_level},{operazione},{filepath},{tipo_data},{old_date or ''},{new_date or ''}"
+    line = (
+        f"{timestamp},{log_level},{operazione},{filepath},"
+        f"{tipo_data},{old_date or ''},{new_date or ''}"
+    )
 
-    with open(LOG_FILE, "a") as f:
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         if f.tell() == 0:
             f.write(header + "\n")
         f.write(line + "\n")
@@ -90,7 +101,10 @@ FILENAME_DATE_PATTERNS = [
     ),
     (
         r"(\d{8})_(\d{6})",
-        lambda m: f"{m.group(1)[:4]}-{m.group(1)[4:6]}-{m.group(1)[6:8]} {m.group(2)[:2]}:{m.group(2)[2:4]}:{m.group(2)[4:6]}",
+        lambda m: (
+            f"{m.group(1)[:4]}-{m.group(1)[4:6]}-{m.group(1)[6:8]} "
+            f"{m.group(2)[:2]}:{m.group(2)[2:4]}:{m.group(2)[4:6]}"
+        ),
     ),
     (
         r"-(\d{8})-WA",
@@ -131,6 +145,7 @@ MONTH_MAP = {
 
 
 def normalize_date(date_str: Optional[str]) -> Optional[str]:
+    """Normalizza una stringa data in formato standard YYYY-MM-DD HH:MM:SS."""
     if not date_str:
         return None
 
@@ -153,6 +168,11 @@ def normalize_date(date_str: Optional[str]) -> Optional[str]:
 
 
 def get_exif_date(filepath: str) -> Tuple[Optional[str], bool]:
+    """Estrae la data EXIF da un file usando exiftool.
+    
+    Returns:
+        Tuple[date_str, is_primary]: data e True se da tag primario
+    """
     for tag in ALL_EXIF_TAGS:
         try:
             result = subprocess.run(
@@ -171,6 +191,7 @@ def get_exif_date(filepath: str) -> Tuple[Optional[str], bool]:
 
 
 def get_json_date(filepath: str) -> Optional[str]:
+    """Estrae la data dal file .supplemental-metadata.json associato."""
     json_file = Path(filepath + ".supplemental-metadata.json")
     if not json_file.exists():
         return None
@@ -185,6 +206,7 @@ def get_json_date(filepath: str) -> Optional[str]:
 
 
 def extract_date_from_filename(filename: str) -> Optional[str]:
+    """Estrae la data dal nome del file usando pattern predefiniti."""
     for pattern, transform in FILENAME_DATE_PATTERNS:
         if re.search(pattern, filename):
             return transform(re.search(pattern, filename))
@@ -192,12 +214,14 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
 
 
 def extract_date_from_folder(filepath: str) -> Optional[str]:
+    """Estrae la data dal nome della cartella (es. 'Foto da 2024')."""
     if match := re.search(r"Foto da (\d{4})", os.path.dirname(filepath)):
         return f"{match.group(1)}-01-01 12:00:00"
     return None
 
 
 def get_current_file_date(filepath: str) -> Optional[str]:
+    """Ottiene la data di creazione corrente del file dal filesystem."""
     try:
         stat = os.stat(filepath)
         timestamp = getattr(stat, "st_birthtime", stat.st_mtime)
@@ -207,6 +231,11 @@ def get_current_file_date(filepath: str) -> Optional[str]:
 
 
 def set_file_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional[str]]:
+    """Imposta la data di creazione del file nel filesystem.
+    
+    Returns:
+        Tuple[success, error]: True se successo, (False, errore) altrimenti
+    """
     try:
         subprocess.run(
             ["touch", "-d", new_date, filepath],
@@ -220,6 +249,11 @@ def set_file_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional
 
 
 def set_exif_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional[str]]:
+    """Imposta la data di creazione nei tag EXIF del file.
+    
+    Returns:
+        Tuple[success, error]: True se successo, (False, errore) altrimenti
+    """
     try:
         subprocess.run(
             [
@@ -241,6 +275,11 @@ def set_exif_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional
 
 
 def resolve_creation_date(filepath: str, filename: str) -> Tuple[Optional[str], str]:
+    """Risolve la data di creazione secondo la priorita: EXIF -> JSON -> Filename -> Folder.
+    
+    Returns:
+        Tuple[creation_date, source]: data e origine della data
+    """
     creation_date, has_primary = get_exif_date(filepath)
     source = ""
 
@@ -264,6 +303,7 @@ def build_output_line(
     source: str,
     current_date: Optional[str],
 ) -> str:
+    """Costruisce una riga di output per il report."""
     info_parts = []
     if source:
         info_parts.append(source)
@@ -283,11 +323,13 @@ def build_output_line(
 
 
 def read_file_list(filepath: str) -> List[str]:
+    """Legge una lista di nomi file da un file di testo."""
     with open(filepath, "r", encoding="utf-8") as f:
         return [line.strip().split()[-1] for line in f if line.strip()]
 
 
 def find_files_by_names(filenames: List[str]) -> List[str]:
+    """Trova i file corrispondenti ai nomi nella lista."""
     found_files = []
     for root, _, files in os.walk("."):
         for file in files:
@@ -328,7 +370,7 @@ def rollback_json_files(dry_run: bool) -> None:
     """Ripristina i file JSON metadata dalle informazioni in google_takeout_metadata/data.lst."""
     metadata_dir = Path("google_takeout_metadata").resolve()
     data_file = metadata_dir / "data.lst"
-    
+
     if not data_file.exists():
         print("Errore: google_takeout_metadata/data.lst non esiste")
         return
@@ -354,6 +396,15 @@ def rollback_json_files(dry_run: bool) -> None:
 
 
 def collect_files(from_list: bool, file_list: Optional[str]) -> List[str]:
+    """Raccoglie i file da elaborare in base ai parametri.
+    
+    Args:
+        from_list: se True, usa file_list come fonte
+        file_list: percorso al file lista (opzionale)
+        
+    Returns:
+        Lista di percorsi completi dei file da elaborare
+    """
     if from_list and file_list:
         return find_files_by_names(read_file_list(file_list))
 
@@ -366,9 +417,14 @@ def collect_files(from_list: bool, file_list: Optional[str]) -> List[str]:
     return files
 
 
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
 def main() -> None:
+    """Funzione principale del programma."""
     parser = argparse.ArgumentParser(
-        description="Proton Drive, Google Takeout Setup - Trova e normalizza date di creazione di file multimediali."
+        description=(
+            "Proton Drive, Google Takeout Setup - "
+            "Trova e normalizza date di creazione di file multimediali."
+        )
     )
     parser.add_argument(
         "--find-missing",
@@ -395,7 +451,10 @@ def main() -> None:
     parser.add_argument(
         "--rollback-json",
         action="store_true",
-        help="Ripristina i file JSON metadata dalle informazioni in google_takeout_metadata/data.lst",
+        help=(
+            "Ripristina i file JSON metadata dalle informazioni in "
+            "google_takeout_metadata/data.lst"
+        ),
     )
 
     args = parser.parse_args()
@@ -449,7 +508,8 @@ def main() -> None:
             if creation_date:
                 if dry_run:
                     print(
-                        f"DRY-RUN: Impostare data EXIF e filesystem per {filepath} a {creation_date}"
+                        f"DRY-RUN: Impostare data EXIF e filesystem "
+                        f"per {filepath} a {creation_date}"
                     )
                 else:
                     # Modifica EXIF
@@ -461,11 +521,11 @@ def main() -> None:
                         # Verifica EXIF
                         new_exif_date, _ = get_exif_date(filepath)
                         verified_exif = new_exif_date == creation_date
-                        
+
                         # Verifica filesystem
                         new_file_date = get_current_file_date(filepath)
                         verified_touch = new_file_date == creation_date
-                        
+
                         log_level = "INFO" if (verified_exif and verified_touch) else "ERROR"
                         write_log(
                             log_level,
@@ -486,9 +546,15 @@ def main() -> None:
                         )
                         print(output_line)
                         if not success_exif:
-                            print(f"Errore EXIF: impossibile impostare la data per {filepath}: {error_exif}")
+                            print(
+                                f"Errore EXIF: impossibile impostare la data "
+                                f"per {filepath}: {error_exif}"
+                            )
                         if not success_touch:
-                            print(f"Errore filesystem: impossibile impostare la data per {filepath}: {error_touch}")
+                            print(
+                                f"Errore filesystem: impossibile impostare la data "
+                                f"per {filepath}: {error_touch}"
+                            )
             else:
                 print(output_line)
                 print(f"Errore: nessuna data valida per {filepath}")
