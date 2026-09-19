@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Proton Drive, Google Takeout Setup - Trova e normalizza date di creazione di file multimediali.
+"""Proton Drive, Google Takeout Setup - Find and normalize creation dates of multimedia files.
 
 Copyright (C) 2026
 
@@ -14,8 +14,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this
 program. If not, see <https://www.gnu.org/licenses/>.
 
-Priorita: EXIF -> JSON -> Nome File -> Nome Cartella
-Uso: python proton_drive_gts.py [--find-missing] [--set] [--exif-files FILELIST] [--dry-run]
+Priority: EXIF -> JSON -> Filename -> Folder Name
+Usage: python proton_drive_gts.py [--find-missing] [--set] [--exif-files FILELIST] [--dry-run]
 """
 
 import argparse
@@ -31,8 +31,8 @@ from typing import List, Optional, Tuple
 
 
 def handle_interrupt(_signum, _frame):
-    """Handler per SIGINT. Gestisce l'interruzione da Ctrl+C."""
-    print("\nInterrotto dall'utente. Uscita pulita.")
+    """Handler for SIGINT. Handles Ctrl+C interruption."""
+    print("\nInterrupted by user. Clean exit.")
     sys.exit(0)
 
 
@@ -50,9 +50,9 @@ def write_log(
     old_date: Optional[str],
     new_date: Optional[str],
 ):
-    """Scrive una riga nel file di log creation_date.log."""
+    """Write a line to the creation_date.log file."""
     header = (
-        "timestamp,log_level,operazione,file,tipo_data_usata,data_originale,data_nuova"
+        "timestamp,log_level,operation,file,date_type_used,original_date,new_date"
     )
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = (
@@ -67,7 +67,7 @@ def write_log(
 
 
 def write_operation_log(log_level: str, operazione: str, filepath: str) -> None:
-    """Helper per logging operazioni senza date (move/rollback JSON)."""
+    """Helper for logging operations without dates (move/rollback JSON)."""
     write_log(log_level, operazione, filepath, "", None, None)
 
 
@@ -145,7 +145,7 @@ MONTH_MAP = {
 
 
 def normalize_date(date_str: Optional[str]) -> Optional[str]:
-    """Normalizza una stringa data in formato standard YYYY-MM-DD HH:MM:SS."""
+    """Normalize a date string to standard YYYY-MM-DD HH:MM:SS format."""
     if not date_str:
         return None
 
@@ -168,10 +168,10 @@ def normalize_date(date_str: Optional[str]) -> Optional[str]:
 
 
 def get_exif_date(filepath: str) -> Tuple[Optional[str], bool]:
-    """Estrae la data EXIF da un file usando exiftool.
+    """Extract EXIF date from a file using exiftool.
     
     Returns:
-        Tuple[date_str, is_primary]: data e True se da tag primario
+        Tuple[date_str, is_primary]: date and True if from primary tag
     """
     for tag in ALL_EXIF_TAGS:
         try:
@@ -191,7 +191,7 @@ def get_exif_date(filepath: str) -> Tuple[Optional[str], bool]:
 
 
 def get_json_date(filepath: str) -> Optional[str]:
-    """Estrae la data dal file .supplemental-metadata.json associato."""
+    """Extract date from associated .supplemental-metadata.json file."""
     json_file = Path(filepath + ".supplemental-metadata.json")
     if not json_file.exists():
         return None
@@ -206,7 +206,7 @@ def get_json_date(filepath: str) -> Optional[str]:
 
 
 def extract_date_from_filename(filename: str) -> Optional[str]:
-    """Estrae la data dal nome del file usando pattern predefiniti."""
+    """Extract date from filename using predefined patterns."""
     for pattern, transform in FILENAME_DATE_PATTERNS:
         if re.search(pattern, filename):
             return transform(re.search(pattern, filename))
@@ -214,14 +214,14 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
 
 
 def extract_date_from_folder(filepath: str) -> Optional[str]:
-    """Estrae la data dal nome della cartella (es. 'Foto da 2024')."""
+    """Extract date from folder name (e.g., 'Foto da 2024')."""
     if match := re.search(r"Foto da (\d{4})", os.path.dirname(filepath)):
         return f"{match.group(1)}-01-01 12:00:00"
     return None
 
 
 def get_current_file_date(filepath: str) -> Optional[str]:
-    """Ottiene la data di creazione corrente del file dal filesystem."""
+    """Get current file creation date from filesystem."""
     try:
         stat = os.stat(filepath)
         timestamp = getattr(stat, "st_birthtime", stat.st_mtime)
@@ -231,10 +231,10 @@ def get_current_file_date(filepath: str) -> Optional[str]:
 
 
 def set_file_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional[str]]:
-    """Imposta la data di creazione del file nel filesystem.
+    """Set file creation date in filesystem.
     
     Returns:
-        Tuple[success, error]: True se successo, (False, errore) altrimenti
+        Tuple[success, error]: True if successful, (False, error) otherwise
     """
     try:
         subprocess.run(
@@ -249,10 +249,10 @@ def set_file_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional
 
 
 def set_exif_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional[str]]:
-    """Imposta la data di creazione nei tag EXIF del file.
+    """Set creation date in file EXIF tags.
     
     Returns:
-        Tuple[success, error]: True se successo, (False, errore) altrimenti
+        Tuple[success, error]: True if successful, (False, error) otherwise
     """
     try:
         subprocess.run(
@@ -275,10 +275,10 @@ def set_exif_creation_date(filepath: str, new_date: str) -> Tuple[bool, Optional
 
 
 def resolve_creation_date(filepath: str, filename: str) -> Tuple[Optional[str], str]:
-    """Risolve la data di creazione secondo la priorita: EXIF -> JSON -> Filename -> Folder.
+    """Resolve creation date according to priority: EXIF -> JSON -> Filename -> Folder.
     
     Returns:
-        Tuple[creation_date, source]: data e origine della data
+        Tuple[creation_date, source]: date and source of the date
     """
     creation_date, has_primary = get_exif_date(filepath)
     source = ""
@@ -303,7 +303,7 @@ def build_output_line(
     source: str,
     current_date: Optional[str],
 ) -> str:
-    """Costruisce una riga di output per il report."""
+    """Build an output line for the report."""
     info_parts = []
     if source:
         info_parts.append(source)
@@ -323,13 +323,13 @@ def build_output_line(
 
 
 def read_file_list(filepath: str) -> List[str]:
-    """Legge una lista di nomi file da un file di testo."""
+    """Read a list of filenames from a text file."""
     with open(filepath, "r", encoding="utf-8") as f:
         return [line.strip().split()[-1] for line in f if line.strip()]
 
 
 def find_files_by_names(filenames: List[str]) -> List[str]:
-    """Trova i file corrispondenti ai nomi nella lista."""
+    """Find files matching the names in the list."""
     found_files = []
     for root, _, files in os.walk("."):
         for file in files:
@@ -339,7 +339,7 @@ def find_files_by_names(filenames: List[str]) -> List[str]:
 
 
 def move_json_files(dry_run: bool) -> None:
-    """Trova tutti i file JSON metadata e crea data.lst in google_takeout_metadata."""
+    """Find all JSON metadata files and create data.lst in google_takeout_metadata."""
     metadata_dir = Path("google_takeout_metadata").resolve()
     metadata_dir.mkdir(exist_ok=True)
 
@@ -367,12 +367,12 @@ def move_json_files(dry_run: bool) -> None:
 
 
 def rollback_json_files(dry_run: bool) -> None:
-    """Ripristina i file JSON metadata dalle informazioni in google_takeout_metadata/data.lst."""
+    """Restore JSON metadata files from information in google_takeout_metadata/data.lst."""
     metadata_dir = Path("google_takeout_metadata").resolve()
     data_file = metadata_dir / "data.lst"
 
     if not data_file.exists():
-        print("Errore: google_takeout_metadata/data.lst non esiste")
+        print("Error: google_takeout_metadata/data.lst does not exist")
         return
 
     actions = []
@@ -396,14 +396,14 @@ def rollback_json_files(dry_run: bool) -> None:
 
 
 def collect_files(from_list: bool, file_list: Optional[str]) -> List[str]:
-    """Raccoglie i file da elaborare in base ai parametri.
+    """Collect files to process based on parameters.
     
     Args:
-        from_list: se True, usa file_list come fonte
-        file_list: percorso al file lista (opzionale)
+        from_list: if True, use file_list as source
+        file_list: path to file list (optional)
         
     Returns:
-        Lista di percorsi completi dei file da elaborare
+        List of full paths of files to process
     """
     if from_list and file_list:
         return find_files_by_names(read_file_list(file_list))
@@ -419,40 +419,40 @@ def collect_files(from_list: bool, file_list: Optional[str]) -> List[str]:
 
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
 def main() -> None:
-    """Funzione principale del programma."""
+    """Main function of the program."""
     parser = argparse.ArgumentParser(
         description=(
             "Proton Drive, Google Takeout Setup - "
-            "Trova e normalizza date di creazione di file multimediali."
+            "Find and normalize creation dates of multimedia files."
         )
     )
     parser.add_argument(
         "--find-missing",
         action="store_true",
-        help="Mostra solo i file senza data EXIF primaria",
+        help="Show only files without primary EXIF date",
     )
     parser.add_argument(
-        "--set", action="store_true", help="Imposta la data di creazione dei file"
+        "--set", action="store_true", help="Set creation date for files"
     )
     parser.add_argument(
         "--file-list",
         type=str,
         default=None,
-        help="File contenente lista di nomi file (uno per riga)",
+        help="File containing list of filenames (one per line)",
     )
     parser.add_argument(
-        "--dry-run", action="store_true", help="Mostra le azioni senza eseguirle"
+        "--dry-run", action="store_true", help="Show actions without executing them"
     )
     parser.add_argument(
         "--move-json",
         action="store_true",
-        help="Sposta i file JSON metadata in google_takeout_metadata e crea data.lst",
+        help="Move JSON metadata files to google_takeout_metadata and create data.lst",
     )
     parser.add_argument(
         "--rollback-json",
         action="store_true",
         help=(
-            "Ripristina i file JSON metadata dalle informazioni in "
+            "Restore JSON metadata files from information in "
             "google_takeout_metadata/data.lst"
         ),
     )
@@ -464,7 +464,7 @@ def main() -> None:
     rollback_json = args.rollback_json
 
     if from_list and not os.path.exists(args.file_list):
-        print(f"Errore: il file '{args.file_list}' non esiste")
+        print(f"Error: file '{args.file_list}' does not exist")
         sys.exit(1)
 
     files = collect_files(from_list, args.file_list)
@@ -508,21 +508,21 @@ def main() -> None:
             if creation_date:
                 if dry_run:
                     print(
-                        f"DRY-RUN: Impostare data EXIF e filesystem "
+                        f"DRY-RUN: Set EXIF and filesystem date "
                         f"per {filepath} a {creation_date}"
                     )
                 else:
-                    # Modifica EXIF
+                    # Modify EXIF
                     success_exif, error_exif = set_exif_creation_date(filepath, creation_date)
-                    # Modifica filesystem
+                    # Modify filesystem
                     success_touch, error_touch = set_file_creation_date(filepath, creation_date)
 
                     if success_exif and success_touch:
-                        # Verifica EXIF
+                        # Verify EXIF
                         new_exif_date, _ = get_exif_date(filepath)
                         verified_exif = new_exif_date == creation_date
 
-                        # Verifica filesystem
+                        # Verify filesystem
                         new_file_date = get_current_file_date(filepath)
                         verified_touch = new_file_date == creation_date
 
@@ -547,17 +547,17 @@ def main() -> None:
                         print(output_line)
                         if not success_exif:
                             print(
-                                f"Errore EXIF: impossibile impostare la data "
+                                f"EXIF error: failed to set date "
                                 f"per {filepath}: {error_exif}"
                             )
                         if not success_touch:
                             print(
-                                f"Errore filesystem: impossibile impostare la data "
+                                f"Filesystem error: failed to set date "
                                 f"per {filepath}: {error_touch}"
                             )
             else:
                 print(output_line)
-                print(f"Errore: nessuna data valida per {filepath}")
+                print(f"Error: no valid date for {filepath}")
         else:
             print(output_line)
 
