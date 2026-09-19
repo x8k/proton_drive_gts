@@ -15,7 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run markdownlint
-        uses: docker://ghcr.io/markdownlint/markdownlint:v0.11.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          args: .
+          node-version: '20'
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Run markdownlint
+        run: markdownlint **/*.md
