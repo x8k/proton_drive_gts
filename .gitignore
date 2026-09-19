@@ -223,3 +223,4 @@ google_takeout_metadata/
 Google*/
 *.lst
 example.json
+*BACKUP*
