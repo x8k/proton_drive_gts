@@ -1,0 +1,61 @@
+#!/bin/bash
+# Script di sviluppo per proton_drive_gts.py
+# Uso: ./dev [all|test|linter|install]
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+check_deps() {
+    python3 -c "import pytest" 2>/dev/null || return 1
+    python3 -c "import pylint" 2>/dev/null || return 1
+    return 0
+}
+
+install_deps() {
+    echo "=== Installazione Dipendenze ==="
+    python3 -m pip install --break-system-packages -r requirements.txt
+}
+
+ensure_deps() {
+    if ! check_deps; then
+        install_deps
+    fi
+}
+
+run_tests() {
+    ensure_deps
+    echo "=== Esecuzione Test ==="
+    python3 -m pytest test_proton_drive_gts.py -v
+}
+
+run_linter() {
+    ensure_deps
+    echo "=== Esecuzione Linter (pylint) ==="
+    python3 -m pylint proton_drive_gts.py test_proton_drive_gts.py
+}
+
+case "${1:-}" in
+    all)
+        run_tests
+        run_linter
+        ;;
+    test)
+        run_tests
+        ;;
+    linter)
+        run_linter
+        ;;
+    install)
+        install_deps
+        ;;
+    *)
+        echo "Uso: $0 [all|test|linter|install]"
+        echo "  all      - Esegui test e linter"
+        echo "  test     - Esegui solo i test"
+        echo "  linter   - Esegui solo pylint"
+        echo "  install  - Installa le dipendenze"
+        exit 1
+        ;;
+esac
