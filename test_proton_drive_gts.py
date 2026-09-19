@@ -1009,5 +1009,62 @@ class TestMoveJson(unittest.TestCase):
             self.assertTrue(moved_file.exists(), f"File {filename} NON spostato in {moved_file}")
 
 
+class TestLoggingMoveAndRollback(unittest.TestCase):
+    """Test per verificare che --move-json e --rollback-json scrivano nel log."""
+
+    def setUp(self):
+        """Crea struttura temporanea per test."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+        
+        Path("Google Foto").mkdir()
+        Path("Google Foto/file1.jpg.supplemental-metadata.json").touch()
+        
+        self.log_file = Path("creation_date.log")
+        if self.log_file.exists():
+            self.log_file.unlink()
+
+    def tearDown(self):
+        """Pulisce."""
+        os.chdir(self.original_dir)
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_move_json_writes_to_log(self):
+        """Test: --move-json scrive nel log creation_date.log."""
+        with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
+            with patch("sys.stdout", new_callable=StringIO):
+                sc.main()
+        
+        self.assertTrue(self.log_file.exists(), "Log file non creato")
+        
+        with open(self.log_file, "r") as f:
+            content = f.read()
+        
+        self.assertIn("MOVE_JSON", content, "Log non contiene operazione MOVE_JSON")
+        self.assertIn("Google Foto", content, "Log non contiene path originale")
+
+    def test_rollback_json_writes_to_log(self):
+        """Test: --rollback-json scrive nel log creation_date.log."""
+        metadata_dir = Path("google_takeout_metadata")
+        metadata_dir.mkdir()
+        Path(metadata_dir, "file1.jpg.supplemental-metadata.json").touch()
+        
+        data_file = metadata_dir / "data.lst"
+        data_file.write_text('"Google Foto/file1.jpg.supplemental-metadata.json" "file1.jpg.supplemental-metadata.json"\n')
+        
+        with patch("sys.argv", ["proton_drive_gts.py", "--rollback-json"]):
+            with patch("sys.stdout", new_callable=StringIO):
+                sc.main()
+        
+        self.assertTrue(self.log_file.exists(), "Log file non creato")
+        
+        with open(self.log_file, "r") as f:
+            content = f.read()
+        
+        self.assertIn("ROLLBACK_JSON", content, "Log non contiene operazione ROLLBACK_JSON")
+
+
 if __name__ == "__main__":
     unittest.main()

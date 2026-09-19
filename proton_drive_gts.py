@@ -55,6 +55,11 @@ def write_log(
         f.write(line + "\n")
 
 
+def write_operation_log(log_level: str, operazione: str, filepath: str) -> None:
+    """Helper per logging operazioni senza date (move/rollback JSON)."""
+    write_log(log_level, operazione, filepath, "", None, None)
+
+
 SUPPORTED_EXTENSIONS = {
     "3gp",
     "avi",
@@ -316,6 +321,7 @@ def move_json_files(dry_run: bool) -> None:
             print(f"DRY-RUN: {src} -> {dest}")
         else:
             src.rename(dest)
+            write_operation_log("INFO", "MOVE_JSON", str(src))
 
 
 def rollback_json_files(dry_run: bool) -> None:
@@ -344,6 +350,7 @@ def rollback_json_files(dry_run: bool) -> None:
         else:
             dest.parent.mkdir(parents=True, exist_ok=True)
             src.rename(dest.resolve())
+            write_operation_log("INFO", "ROLLBACK_JSON", str(dest))
 
 
 def collect_files(from_list: bool, file_list: Optional[str]) -> List[str]:
