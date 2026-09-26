@@ -10,6 +10,7 @@ import unittest
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import proton_drive_gts as sc
@@ -1072,6 +1073,390 @@ class TestLoggingMoveAndRollback(unittest.TestCase):
             content = f.read()
 
         self.assertIn("ROLLBACK_JSON", content, "Log non contiene operazione ROLLBACK_JSON")
+
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+ADD_PHOTO_DUPLICATE_OUTPUT = (
+    "❌ Immagine 065.jpg: Photo already exists in the album.\n"
+)
+
+
+class TestFindAlbumDirs(unittest.TestCase):
+    """Tests for find_album_dirs."""
+
+    def setUp(self):
+        """Create temporary directory."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+
+    def tearDown(self):
+        """Clean."""
+        os.chdir(self.original_dir)
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_find_album_dirs_returns_album_directories(self):
+        """Test: first-level directories of every target dir become albums."""
+        Path("Google Foto").mkdir()
+        Path("Google Photos").mkdir()
+        Path("Google Foto", "Album A").mkdir()
+        Path("Google Foto", "Album con spazi e caratteri speciali ").mkdir()
+        Path("Google Foto", "Album A", "Sub").mkdir()
+        Path("Google Photos", "English Album").mkdir()
+
+        result = sc.find_album_dirs()
+
+        names = sorted(d.name for d in result)
+        self.assertEqual(
+            names,
+            ["Album A", "Album con spazi e caratteri speciali ", "English Album"],
+        )
+        self.assertTrue(all(d.is_dir() for d in result))
+
+    def test_find_album_dirs_excludes_year_folders(self):
+        """Test: 'Foto da <ANNO>' and 'Photo from <YEAR>' are excluded."""
+        Path("Google Foto").mkdir()
+        Path("Google Foto", "Album A").mkdir()
+        for year_folder in ("Foto da 2010", "Foto da 2024", "Photo from 2023"):
+            Path("Google Foto", year_folder).mkdir()
+
+        result = sc.find_album_dirs()
+
+        self.assertEqual([d.name for d in result], ["Album A"])
+
+    def test_find_album_dirs_keeps_similar_names_without_year(self):
+        """Test: names similar to year folders without a 4-digit year are kept."""
+        Path("Google Foto").mkdir()
+        Path("Google Foto", "Foto da 24").mkdir()
+        Path("Google Foto", "Foto da un amico").mkdir()
+        Path("Google Foto", "Photos from 2023").mkdir()
+
+        result = sc.find_album_dirs()
+
+        self.assertEqual(
+            sorted(d.name for d in result),
+            ["Foto da 24", "Foto da un amico", "Photos from 2023"],
+        )
+
+    def test_find_album_dirs_ignores_files_and_other_dirs(self):
+        """Test: files and directories outside target dirs are ignored."""
+        Path("Google Foto").mkdir()
+        Path("Google Foto", "Album A").mkdir()
+        Path("Google Foto", "not_a_dir.jpg").touch()
+        Path("Altro").mkdir()
+        Path("Altro", "Ignorato").mkdir()
+
+        result = sc.find_album_dirs()
+
+        self.assertEqual([d.name for d in result], ["Album A"])
+
+
+class TestListProtonAlbums(unittest.TestCase):
+    """Tests for list_proton_albums (parse of 'proton-drive album list')."""
+
+    def test_list_proton_albums_parses_fixture(self):
+        """Test: parses names, emoji prefixes and duplicates from real output."""
+        stdout = (FIXTURES_DIR / "proton-drive_album_list.out").read_text()
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.return_value = SimpleNamespace(
+                returncode=0, stdout=stdout, stderr=""
+            )
+
+            result = sc.list_proton_albums()
+
+        self.assertEqual(
+            result,
+            {
+                "CIPPA LIPPA",
+                "Japan Matsuri - Bellinzona",
+                "Gerenpass, Val Bedretto",
+                "Giornata dello Sport - Scherma storica, Nicco",
+                "Mostra Hasukai a Lecco + pranzo al Cardamomo (sede Lecchese)",
+            },
+        )
+        mock_run.assert_called_once_with(
+            ["proton-drive", "album", "list"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+
+    def test_list_proton_albums_empty_on_failure(self):
+        """Test: no crash and empty set when proton-drive fails."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.return_value = SimpleNamespace(
+                returncode=1, stdout="", stderr="boom"
+            )
+
+            result = sc.list_proton_albums()
+
+        self.assertEqual(result, set())
+
+
+class TestCreateProtonAlbum(unittest.TestCase):
+    """Tests for create_proton_album."""
+
+    def test_create_proton_album_command(self):
+        """Test: calls proton-drive album create with the album name."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.return_value = SimpleNamespace(
+                returncode=0, stdout="{}", stderr=""
+            )
+
+            result = sc.create_proton_album("Album A")
+
+        self.assertTrue(result)
+        mock_run.assert_called_once_with(
+            ["proton-drive", "album", "create", "Album A"],
+            capture_output=True,
+            timeout=60,
+            check=True,
+        )
+
+    def test_create_proton_album_failure(self):
+        """Test: returns False when proton-drive fails."""
+        import subprocess
+
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(1, "proton-drive")
+
+            result = sc.create_proton_album("Album A")
+
+        self.assertFalse(result)
+
+
+class TestAddPhotoToAlbum(unittest.TestCase):
+    """Tests for add_photo_to_album."""
+
+    def test_add_photo_to_album_command(self):
+        """Test: uses /albums/<ALBUM> and /photos/<PHOTO> with special characters."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.return_value = SimpleNamespace(
+                returncode=0, stdout="ok\n", stderr=""
+            )
+
+            result = sc.add_photo_to_album("Album A", "foto 1.jpg")
+
+        self.assertTrue(result)
+        mock_run.assert_called_once_with(
+            [
+                "proton-drive",
+                "album",
+                "add-photo",
+                "/albums/Album A",
+                "/photos/foto 1.jpg",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+
+    def test_add_photo_to_album_duplicate_detected(self):
+        """Test: error emoji in output means failure even with returncode 0."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.return_value = SimpleNamespace(
+                returncode=0, stdout=ADD_PHOTO_DUPLICATE_OUTPUT, stderr=""
+            )
+
+            result = sc.add_photo_to_album("Album A", "065.jpg")
+
+        self.assertFalse(result)
+
+    def test_add_photo_to_album_nonzero_returncode(self):
+        """Test: non-zero returncode means failure."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.return_value = SimpleNamespace(
+                returncode=1, stdout="", stderr="not found"
+            )
+
+            result = sc.add_photo_to_album("Album A", "foto 1.jpg")
+
+        self.assertFalse(result)
+
+    def test_add_photo_to_album_binary_missing(self):
+        """Test: returns False when proton-drive is not installed."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            mock_run.side_effect = OSError("No such file or directory")
+
+            result = sc.add_photo_to_album("Album A", "foto 1.jpg")
+
+        self.assertFalse(result)
+
+
+class TestCreateAlbums(unittest.TestCase):
+    """Tests for the --create-albums switch."""
+
+    def setUp(self):
+        """Create a tree with albums, photos and a year folder."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+
+        album_a = Path("Google Foto", "Album A")
+        album_a.mkdir(parents=True)
+        (album_a / "foto 1.jpg").touch()
+        (album_a / "foto 2.JPG").touch()
+        (album_a / "foto 1.jpg.supplemental-metadata.json").touch()
+        (album_a / "note.txt").touch()
+
+        album_special = Path("Google Foto", "Album è speciale: con spazi ")
+        album_special.mkdir()
+        (album_special / "foto & condivisa.png").touch()
+
+        year_folder = Path("Google Foto", "Foto da 2024")
+        year_folder.mkdir()
+        (year_folder / "vecchia.jpg").touch()
+
+        self.log_file = Path("creation_date.log")
+
+    def tearDown(self):
+        """Clean."""
+        os.chdir(self.original_dir)
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    @staticmethod
+    def _fake_proton_drive(existing_albums=(), failing_photos=(), create_failure=False):
+        """Build a fake subprocess.run handling the proton-drive commands."""
+        import subprocess
+
+        list_output = "".join(
+            f"   Sep 26 2026 20:24 {name} (0 photos)\n" for name in existing_albums
+        )
+
+        def fake_run(cmd, **_kwargs):
+            if cmd[:3] == ["proton-drive", "album", "list"]:
+                return SimpleNamespace(returncode=0, stdout=list_output, stderr="")
+            if cmd[:3] == ["proton-drive", "album", "create"]:
+                if create_failure:
+                    raise subprocess.CalledProcessError(1, cmd)
+                return SimpleNamespace(returncode=0, stdout="{}", stderr="")
+            if cmd[:3] == ["proton-drive", "album", "add-photo"]:
+                if cmd[4] in failing_photos:
+                    return SimpleNamespace(
+                        returncode=0,
+                        stdout=(
+                            f"❌ Immagine {cmd[4]}: "
+                            "Photo already exists in the album.\n"
+                        ),
+                        stderr="",
+                    )
+                return SimpleNamespace(returncode=0, stdout="ok\n", stderr="")
+            raise AssertionError(f"unexpected command: {cmd}")
+
+        return fake_run
+
+    def _run_main(self, fake_run):
+        """Run sc.main() with --create-albums and a mocked proton-drive."""
+        with patch("proton_drive_gts.subprocess.run", side_effect=fake_run) as mock_run:
+            with patch("sys.argv", ["proton_drive_gts.py", "--create-albums"]):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    sc.main()
+        return mock_run, mock_stdout.getvalue()
+
+    @staticmethod
+    def _commands(mock_run, subcommand):
+        return [call[0][0] for call in mock_run.call_args_list
+                if call[0][0][:3] == ["proton-drive", "album", subcommand]]
+
+    def test_create_albums_creates_albums_and_adds_photos(self):
+        """Test: creates new albums and adds supported photos only."""
+        fake_run = self._fake_proton_drive()
+        mock_run, _ = self._run_main(fake_run)
+
+        created = self._commands(mock_run, "create")
+        self.assertEqual(
+            sorted(cmd[3] for cmd in created),
+            ["Album A", "Album è speciale: con spazi "],
+        )
+
+        add_args = self._commands(mock_run, "add-photo")
+        self.assertEqual(len(add_args), 3)
+        self.assertIn(
+            ["proton-drive", "album", "add-photo", "/albums/Album A",
+             "/photos/foto 1.jpg"],
+            add_args,
+        )
+        self.assertIn(
+            ["proton-drive", "album", "add-photo", "/albums/Album A",
+             "/photos/foto 2.JPG"],
+            add_args,
+        )
+        self.assertIn(
+            ["proton-drive", "album", "add-photo",
+             "/albums/Album è speciale: con spazi ",
+             "/photos/foto & condivisa.png"],
+            add_args,
+        )
+
+        log = self.log_file.read_text()
+        self.assertIn("INFO", log)
+        self.assertIn("CREATE_ALBUM", log)
+        self.assertIn("ADD_PHOTO", log)
+        self.assertIn("foto & condivisa.png", log)
+
+    def test_create_albums_skips_existing_album(self):
+        """Test: an album already in Proton Drive is not created twice."""
+        fake_run = self._fake_proton_drive(existing_albums=["Album A"])
+        mock_run, output = self._run_main(fake_run)
+
+        created = self._commands(mock_run, "create")
+        self.assertEqual(created[0][3], "Album è speciale: con spazi ")
+        self.assertEqual(len(created), 1)
+        self.assertIn("Album already exists: Album A", output)
+
+        add_args = self._commands(mock_run, "add-photo")
+        self.assertTrue(
+            any(cmd[3] == "/albums/Album A" for cmd in add_args),
+            "photos of the existing album were not added",
+        )
+
+    def test_create_albums_failed_add_photo_logs_error_and_continues(self):
+        """Test: a failed add-photo logs ERROR and the next photos go on."""
+        fake_run = self._fake_proton_drive(failing_photos=["/photos/foto 1.jpg"])
+        mock_run, output = self._run_main(fake_run)
+
+        add_args = self._commands(mock_run, "add-photo")
+        self.assertEqual(len(add_args), 3)
+        self.assertIn("Error: failed to add foto 1.jpg", output)
+
+        log = self.log_file.read_text()
+        self.assertIn("ERROR,ADD_PHOTO", log)
+        self.assertIn("foto 2.JPG", log)
+
+    def test_create_albums_failed_create_skips_photos(self):
+        """Test: a failed album creation logs ERROR and skips its photos."""
+        fake_run = self._fake_proton_drive(create_failure=True)
+        mock_run, output = self._run_main(fake_run)
+
+        self.assertEqual(len(self._commands(mock_run, "add-photo")), 0)
+        self.assertIn("Error: failed to create album", output)
+
+        log = self.log_file.read_text()
+        self.assertIn("ERROR,CREATE_ALBUM", log)
+
+    def test_create_albums_dry_run_calls_nothing(self):
+        """Test: --create-albums --dry-run prints actions without calling."""
+        with patch("proton_drive_gts.subprocess.run") as mock_run:
+            with patch(
+                "sys.argv",
+                ["proton_drive_gts.py", "--create-albums", "--dry-run"],
+            ):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    sc.main()
+
+        mock_run.assert_not_called()
+        output = mock_stdout.getvalue()
+        self.assertIn("DRY-RUN", output)
+        self.assertIn('album create "Album A"', output)
+        self.assertIn("/photos/foto 1.jpg", output)
+        self.assertIn("/photos/foto & condivisa.png", output)
+        self.assertNotIn("vecchia.jpg", output)
+        self.assertFalse(self.log_file.exists())
 
 
 if __name__ == "__main__":
