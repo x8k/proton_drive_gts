@@ -47,7 +47,7 @@ graph TD
 
 ### 1. Copy Google Photos directory
 
-Copy your `Google Photo`, `Google Foto`, `GooglePhotos`, or `Google Photos` directory
+Copy your `Google Photo`, `Google Foto`, `Google Photos`, `GooglePhoto`, or `GoogleFoto` directory
 to the same folder as this script.
 
 ### 2. Check current status

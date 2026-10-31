@@ -37,7 +37,7 @@ LOG_HEADER = "timestamp,log_level,operation,file,date_type_used,original_date,ne
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-TARGET_DIRS = ["Google Foto", "Google Photo", "GooglePhoto", "Google Photos"]
+TARGET_DIRS = ["Google Foto", "Google Photo", "GooglePhoto", "Google Photos", "GoogleFoto"]
 
 SUPPORTED_EXTENSIONS = {
     "3gp",
