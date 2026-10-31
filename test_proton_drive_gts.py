@@ -777,6 +777,91 @@ class TestCtrlC(unittest.TestCase):
         ))
 
 
+class TestTargetDirs(unittest.TestCase):
+    """Tests for the TARGET_DIRS constant."""
+
+    def test_target_dirs_contains_all_google_variants(self):
+        """Test: tutte le varianti note sono in TARGET_DIRS, incluso GoogleFoto."""
+        self.assertEqual(
+            set(sc.TARGET_DIRS),
+            {"Google Foto", "Google Photo", "Google Photos", "GooglePhoto", "GoogleFoto"},
+        )
+
+    def test_target_dirs_has_no_duplicates(self):
+        """Test: nessun nome duplicato in TARGET_DIRS."""
+        self.assertEqual(len(sc.TARGET_DIRS), len(set(sc.TARGET_DIRS)))
+
+
+class TestGoogleFotoTargetDir(unittest.TestCase):
+    """Tests: la directory 'GoogleFoto' viene trattata come target dir."""
+
+    def setUp(self):
+        """Create struttura temporanea con la variante GoogleFoto."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+
+        Path("GoogleFoto").mkdir()
+        Path("GoogleFoto/subdir").mkdir()
+        Path("GoogleFoto/file1.jpg.supplemental-metadata.json").touch()
+        Path("GoogleFoto/subdir/file2.jpg.supplemental-metadata.json").touch()
+        Path("GoogleFoto", "Album GoogleFoto").mkdir()
+        Path("GoogleFoto", "Album GoogleFoto", "foto.jpg").touch()
+
+    def tearDown(self):
+        """Clean."""
+        os.chdir(self.original_dir)
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_move_json_collects_json_from_googlefoto(self):
+        """Test: --move-json raccoglie i JSON anche da GoogleFoto."""
+        with patch("sys.argv", ["proton_drive_gts.py", "--move-json"]):
+            with patch("sys.stdout", new_callable=StringIO):
+                sc.main()
+
+        data_file = Path("google_takeout_metadata/data.lst")
+        content = data_file.read_text()
+        self.assertIn("GoogleFoto/file1.jpg.supplemental-metadata.json", content)
+        self.assertIn("GoogleFoto/subdir/file2.jpg.supplemental-metadata.json", content)
+
+        metadata_dir = Path("google_takeout_metadata")
+        self.assertTrue((metadata_dir / "file1.jpg.supplemental-metadata.json").exists())
+        self.assertTrue((metadata_dir / "file2.jpg.supplemental-metadata.json").exists())
+        self.assertFalse(Path("GoogleFoto/file1.jpg.supplemental-metadata.json").exists())
+
+    def test_move_json_dry_run_shows_googlefoto_actions(self):
+        """Test: --move-json --dry-run mostra le azioni per GoogleFoto."""
+        with patch("sys.argv", ["proton_drive_gts.py", "--move-json", "--dry-run"]):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                sc.main()
+                output = mock_stdout.getvalue()
+
+        self.assertIn("DRY-RUN", output)
+        self.assertIn("GoogleFoto/file1.jpg.supplemental-metadata.json", output)
+        self.assertTrue(Path("GoogleFoto/file1.jpg.supplemental-metadata.json").exists())
+
+    def test_find_album_dirs_includes_googlefoto_albums(self):
+        """Test: find_album_dirs trova le directory di primo livello dentro GoogleFoto."""
+        result = sc.find_album_dirs()
+
+        self.assertEqual(
+            sorted(d.name for d in result),
+            ["Album GoogleFoto", "subdir"],
+        )
+
+    def test_create_albums_dry_run_includes_googlefoto_album(self):
+        """Test: --create-albums --dry-run include gli album di GoogleFoto."""
+        with patch("sys.argv", ["proton_drive_gts.py", "--create-albums", "--dry-run"]):
+            with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                sc.main()
+                output = mock_stdout.getvalue()
+
+        self.assertIn('album create "Album GoogleFoto"', output)
+        self.assertIn("/albums/Album GoogleFoto", output)
+        self.assertIn("/photos/foto.jpg", output)
+
+
 class TestMoveJson(unittest.TestCase):
     """Tests for lo switch --move-json."""
 
