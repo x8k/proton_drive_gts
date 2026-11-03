@@ -83,25 +83,6 @@ def existing_target_dirs() -> List[str]:
     return [name for name in core.TARGET_DIRS if Path(name).is_dir()]
 
 
-def collect_records() -> List[FileRecord]:
-    """Analyze every supported file in the tree and build its record."""
-    records = []
-    for filepath in core.collect_files(False, None):
-        filename = os.path.basename(filepath)
-        creation_date, source = core.resolve_creation_date(filepath, filename)
-        records.append(
-            FileRecord(
-                filepath=filepath,
-                filename=filename,
-                creation_date=creation_date,
-                source=source,
-                json_date=core.get_json_date(filepath),
-                current_date=core.get_current_file_date(filepath),
-            )
-        )
-    return records
-
-
 def scan_folder(
     progress: Optional[ProgressCallback] = None,
     cancel: Optional[threading.Event] = None,
