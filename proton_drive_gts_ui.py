@@ -681,12 +681,12 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         if chosen:
             self._set_folder(chosen)
 
-    def dragEnterEvent(self, event) -> None:
+    def dragEnterEvent(self, event) -> None:  # pylint: disable=invalid-name
         """Accept the drag when it carries at least one local folder."""
         if self._first_local_dir(event.mimeData().urls()) is not None:
             event.acceptProposedAction()
 
-    def dropEvent(self, event) -> None:
+    def dropEvent(self, event) -> None:  # pylint: disable=invalid-name
         """Use the first dropped local folder as the export folder."""
         folder = self._first_local_dir(event.mimeData().urls())
         if folder:
