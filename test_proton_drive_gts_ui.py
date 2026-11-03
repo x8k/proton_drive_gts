@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+# pylint: disable=line-too-long,import-outside-toplevel,unused-import,unused-variable
+"""Smoke tests for the PySide6 UI (proton_drive_gts_ui).
+
+These tests need a Qt runtime. On a headless machine set
+QT_QPA_PLATFORM=offscreen before running them. They cover the wizard
+flow with mocked ui_flow operations: folder selection, scan results
+and the fix preview.
+"""
+
+import os
+import shutil
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+try:
+    import proton_drive_gts_ui as ui
+    import ui_flow
+except ImportError as exc:  # pragma: no cover
+    raise unittest.SkipTest(f"UI dependencies not available: {exc}") from exc
+
+from PySide6 import QtCore, QtWidgets
+
+TIMEOUT_MS = 5000
+
+
+def wait_until(condition, timeout_ms=TIMEOUT_MS):
+    """Run the event loop until condition() is true or the timeout ends."""
+    steps = timeout_ms // 50
+    for _ in range(steps):
+        if condition():
+            return True
+        QtCore.QCoreApplication.processEvents()
+        QtCore.QThread.msleep(50)
+    return condition()
+
+
+class UiSmokeTestCase(unittest.TestCase):
+    """Base class: offscreen QApplication and a temp export folder."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Create one shared QApplication for all the smoke tests."""
+        if not QtWidgets.QApplication.instance():
+            cls.app = QtWidgets.QApplication(sys.argv)
+
+    def setUp(self):
+        """Create a temp folder with a fake export and the main window."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_dir = os.getcwd()
+        os.makedirs(os.path.join(self.temp_dir, "Google Foto"), exist_ok=True)
+        with open(os.path.join(self.temp_dir, "Google Foto", "a.jpg"), "w") as f:
+            f.write("x")
+        self.window = ui.MainWindow()
+
+    def tearDown(self):
+        """Close the window and remove the temp folder."""
+        self.window.close()
+        os.chdir(self.original_dir)
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+
+class TestWelcomePage(UiSmokeTestCase):
+    """Tests for the welcome page."""
+
+    def test_window_shows_welcome(self):
+        """Test: the wizard opens on the welcome page."""
+        self.assertEqual(self.window.stack.currentWidget(), self.window.page_welcome)
+        self.assertFalse(self.window.welcome_analyze.isEnabled())
+
+    def test_folder_selection_enables_analyze(self):
+        """Test: choosing a folder with an export enables the analysis."""
+        self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
+        self.assertTrue(self.window.welcome_analyze.isEnabled())
+        self.assertIn(
+            "Google Foto", self.window.welcome_targets_label.text()
+        )
+
+
+class TestScanFlow(UiSmokeTestCase):
+    """Tests for the analysis flow."""
+
+    def test_scan_populates_results(self):
+        """Test: after the scan the cards show the summary counts."""
+        self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
+        record = ui_flow.FileRecord(
+            "a.jpg", "a.jpg", "2024-05-10 08:00:00", "MD used", None, None
+        )
+        summary = ui_flow.ScanSummary(total=1, ok=0, fixable=1, no_date=0)
+        with patch.object(ui_flow, "scan_folder", return_value=(summary, [record])):
+            self.window._start_scan()  # pylint: disable=protected-access
+            self.assertTrue(
+                wait_until(lambda: self.window.scan_cards[0][1].text() != "–")
+            )
+        self.assertEqual(
+            self.window.scan_cards[0][1].text(),
+            "0",
+        )
+        self.assertEqual(self.window.scan_cards[1][1].text(), "1")
+        self.assertTrue(self.window.scan_fix.isEnabled())
+
+    def test_scan_cancelled_shows_note(self):
+        """Test: a cancelled scan (None result) updates the status."""
+        self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
+        with patch.object(ui_flow, "scan_folder", return_value=None):
+            self.window._start_scan()  # pylint: disable=protected-access
+            self.assertTrue(wait_until(self.window.scan_status.isVisible))
+        self.assertIn("interrotta", self.window.scan_status.text())
+
+
+class TestFixFlow(UiSmokeTestCase):
+    """Tests for the fix preview."""
+
+    def test_preview_unlocks_apply(self):
+        """Test: after a dry-run the apply button is enabled."""
+        record = ui_flow.FileRecord(
+            "a.jpg", "a.jpg", "2024-05-10 08:00:00", "MD used", None, None
+        )
+        self.window._summary = ui_flow.ScanSummary(total=1, ok=0, fixable=1)  # pylint: disable=protected-access
+        self.window._records = [record]  # pylint: disable=protected-access
+        self.window._show_fix_page()  # pylint: disable=protected-access
+        result = ui_flow.FixResult(processed=1, fixed=1)
+        self.window._on_preview_done(result)  # pylint: disable=protected-access
+        self.assertTrue(self.window.fix_apply_btn.isEnabled())
+        self.assertIn("1 file", self.window.fix_preview.toPlainText())
+
+
+if __name__ == "__main__":
+    unittest.main()
