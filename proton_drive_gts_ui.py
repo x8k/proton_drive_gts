@@ -13,6 +13,7 @@ Requires: pip install PySide6
 """
 
 import argparse
+import html
 import os
 import sys
 import threading
@@ -27,6 +28,7 @@ import ui_flow
 
 APP_NAME = "Sistema le foto per Proton Drive"
 MAX_TABLE_ROWS = 500
+BADGE_PATH_LENGTH = 60
 
 ICONS = {
     "camera": (
@@ -110,6 +112,9 @@ QTextEdit, QTableWidget { background: #ffffff; border: 1px solid #ebe8f6;
                           border-radius: 10px; font-size: 13px; color: #1a1625; }
 QHeaderView::section { background: #f6f5fb; border: none; padding: 8px;
                        font-weight: 600; color: #6b6480; }
+QFrame#stepLine { background: #ebe8f6; border: none; }
+QFrame#dropZone { background: #fbfaff; border: 2px dashed #c9c0f0; border-radius: 12px; }
+QLabel#dropHint { color: #6b6480; font-size: 13px; }
 """
 
 
@@ -218,6 +223,61 @@ class Card(QtWidgets.QFrame):  # pylint: disable=too-few-public-methods
         return self._layout
 
 
+class StepIndicator(QtWidgets.QWidget):  # pylint: disable=too-few-public-methods
+    """Breadcrumb of the three wizard steps with their state."""
+
+    STEPS = ("Cartella", "Analisi", "Correzione")
+
+    def __init__(self, parent=None):
+        """Build the numbered circles joined by connector lines."""
+        super().__init__(parent)
+        self._circles = []
+        self._names = []
+        row = QtWidgets.QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(8)
+        for i, name in enumerate(self.STEPS):
+            circle = QtWidgets.QLabel(str(i + 1))
+            circle.setFixedSize(26, 26)
+            circle.setAlignment(Qt.AlignCenter)
+            name_label = QtWidgets.QLabel(name)
+            self._circles.append(circle)
+            self._names.append(name_label)
+            row.addWidget(circle)
+            row.addWidget(name_label)
+            if i < len(self.STEPS) - 1:
+                line = QtWidgets.QFrame()
+                line.setObjectName("stepLine")
+                line.setFixedHeight(2)
+                row.addWidget(line, stretch=1)
+        self.set_state(0, 0)
+
+    def set_state(self, current: int, completed: int) -> None:
+        """Mark the steps before `completed` as done, `current` as active."""
+        for i, (circle, name) in enumerate(zip(self._circles, self._names)):
+            if i < completed:
+                circle.setText("✓")
+                circle.setStyleSheet(
+                    "background:#0e8a5f;color:#ffffff;border-radius:13px;"
+                    "font-weight:700;"
+                )
+                name.setStyleSheet("color:#0e8a5f;font-weight:600;")
+            elif i == current:
+                circle.setText(str(i + 1))
+                circle.setStyleSheet(
+                    "background:#6d4aff;color:#ffffff;border-radius:13px;"
+                    "font-weight:700;"
+                )
+                name.setStyleSheet("color:#1a1625;font-weight:600;")
+            else:
+                circle.setText(str(i + 1))
+                circle.setStyleSheet(
+                    "background:#ffffff;color:#9b94b8;border:1px solid #d9d5ee;"
+                    "border-radius:13px;"
+                )
+                name.setStyleSheet("color:#9b94b8;")
+
+
 class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-attributes,too-many-public-methods,too-few-public-methods
     """The wizard main window: a stack of pages plus a shared job runner."""
 
@@ -226,6 +286,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         super().__init__()
         self.setWindowTitle(APP_NAME)
         self.setMinimumSize(720, 620)
+        self.setAcceptDrops(True)
         self.folder = folder
         self._thread = None
         self._worker = None
@@ -254,14 +315,20 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.fix_apply_btn = None
         self.done_label = None
         self.done_log = None
+        self.done_badge = None
+        self.done_values = None
         self.tools_progress = None
         self.tools_output = None
+        self._badge_animation = None
 
         self.stack = QtWidgets.QStackedWidget()
         root = QtWidgets.QWidget()
         root.setObjectName("root")
         root_layout = QtWidgets.QVBoxLayout(root)
         root_layout.setContentsMargins(48, 36, 48, 36)
+        root_layout.setSpacing(10)
+        self.step_indicator = StepIndicator()
+        root_layout.addWidget(self.step_indicator)
         root_layout.addWidget(self.stack)
         self.setCentralWidget(root)
         self._build_pages()
@@ -338,6 +405,23 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         card.body.addWidget(self.welcome_targets_label)
         card.body.addWidget(pick)
         card.body.addWidget(analyze)
+
+        drop_zone = QtWidgets.QFrame()
+        drop_zone.setObjectName("dropZone")
+        zone_layout = QtWidgets.QVBoxLayout(drop_zone)
+        zone_layout.setContentsMargins(16, 14, 16, 14)
+        zone_title = QtWidgets.QLabel("oppure trascina qui la cartella dell'archivio")
+        zone_title.setObjectName("dropHint")
+        zone_title.setAlignment(Qt.AlignCenter)
+        zone_sub = QtWidgets.QLabel(
+            "Funziona in qualsiasi momento: trascina una cartella sulla finestra."
+        )
+        zone_sub.setObjectName("dropHint")
+        zone_sub.setStyleSheet("font-size:11px;")
+        zone_sub.setAlignment(Qt.AlignCenter)
+        zone_layout.addWidget(zone_title)
+        zone_layout.addWidget(zone_sub)
+        card.body.addWidget(drop_zone)
         layout.addWidget(card)
 
         tools = QtWidgets.QPushButton("Strumenti avanzati (metadati JSON, album)")
@@ -452,7 +536,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         return page
 
     def _build_done_page(self) -> QtWidgets.QWidget:
-        """Final page: results and next steps."""
+        """Final page: animated check, summary cards and next steps."""
         page = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(page)
         layout.setSpacing(18)
@@ -463,6 +547,27 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
             "Le tue foto sono pronte per l'importazione in Proton Drive.",
         )
         card = Card()
+        self.done_badge = QtWidgets.QLabel()
+        self.done_badge.setAlignment(Qt.AlignCenter)
+        self.done_badge.setMinimumSize(96, 96)
+        row = QtWidgets.QHBoxLayout()
+        self.done_values = {}
+        for key, color, label in (
+            ("processed", "#6d4aff", "File controllati"),
+            ("fixed", "#0e8a5f", "Date corrette"),
+            ("left", "#b7791f", "Lasciate senza data"),
+        ):
+            stat = Card()
+            stat.setObjectName("statCard")
+            value = QtWidgets.QLabel("–")
+            value.setObjectName("statValue")
+            value.setStyleSheet(f"color:{color};")
+            name = QtWidgets.QLabel(label)
+            name.setObjectName("statLabel")
+            stat.body.addWidget(value)
+            stat.body.addWidget(name)
+            row.addWidget(stat)
+            self.done_values[key] = value
         self.done_label = QtWidgets.QLabel("")
         self.done_label.setWordWrap(True)
         self.done_log = QtWidgets.QTextEdit()
@@ -477,6 +582,8 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         restart = QtWidgets.QPushButton("  Ricomincia con un'altra cartella")
         restart.setIcon(svg_icon("arrow-right", "#ffffff"))
         restart.clicked.connect(lambda: self._goto(self.page_welcome))
+        card.body.addWidget(self.done_badge)
+        card.body.addLayout(row)
         card.body.addWidget(self.done_label)
         card.body.addWidget(self.done_log)
         card.body.addWidget(show_log)
@@ -551,8 +658,20 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
     # -- actions -----------------------------------------------------------
 
     def _goto(self, page: QtWidgets.QWidget) -> None:
-        """Switch the visible page."""
+        """Switch the visible page and refresh the step indicator."""
         self.stack.setCurrentWidget(page)
+        if page is self.page_welcome:
+            self.step_indicator.set_state(0, 0)
+        elif page is self.page_scan:
+            self.step_indicator.set_state(1, 1)
+        elif page is self.page_fix:
+            self.step_indicator.set_state(2, 1)
+        elif page is self.page_done:
+            self.step_indicator.set_state(2, 3)
+        else:
+            self.step_indicator.hide()
+            return
+        self.step_indicator.show()
 
     def _pick_folder(self) -> None:
         """Open the folder picker and inspect the chosen folder."""
@@ -561,6 +680,28 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         )
         if chosen:
             self._set_folder(chosen)
+
+    def dragEnterEvent(self, event) -> None:
+        """Accept the drag when it carries at least one local folder."""
+        if self._first_local_dir(event.mimeData().urls()) is not None:
+            event.acceptProposedAction()
+
+    def dropEvent(self, event) -> None:
+        """Use the first dropped local folder as the export folder."""
+        folder = self._first_local_dir(event.mimeData().urls())
+        if folder:
+            self._set_folder(folder)
+            event.acceptProposedAction()
+
+    @staticmethod
+    def _first_local_dir(urls) -> "str | None":
+        """Return the first local directory among the dragged URLs."""
+        for url in urls:
+            if url.isLocalFile():
+                path = Path(url.toLocalFile())
+                if path.is_dir():
+                    return str(path)
+        return None
 
     def _set_folder(self, folder: str) -> None:
         """Point the tool at a folder and show what was found in it."""
@@ -650,18 +791,45 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.fix_result_label.setText("")
         if result is None:
             return
-        preview_lines = ui_flow.record_lines(self._records)
-        shown = [f"Verranno corretti {result.fixed} file:"] + preview_lines[
-            :MAX_TABLE_ROWS
-        ]
-        if len(preview_lines) > MAX_TABLE_ROWS:
-            shown.append(f"… e altri {len(preview_lines) - MAX_TABLE_ROWS} file.")
-        self.fix_preview.setPlainText("\n".join(shown))
+        rows = self._preview_rows()
+        doc = (
+            f"<div style='margin-bottom:6px;color:#1a1625'>Verranno corretti "
+            f"<b>{result.fixed}</b> file:</div>" + "".join(rows[:MAX_TABLE_ROWS])
+        )
+        if len(rows) > MAX_TABLE_ROWS:
+            doc += (
+                f"<div style='color:#6b6480'>… e altri "
+                f"{len(rows) - MAX_TABLE_ROWS} file.</div>"
+            )
+        self.fix_preview.setHtml(doc)
         self.fix_result_label.setText(
             f"{result.fixed} file verranno corretti. Controlla l'anteprima e "
             "premi «Applica le correzioni»."
         )
         self.fix_apply_btn.setEnabled(result.fixed > 0)
+
+    def _preview_rows(self) -> list:
+        """Build the before → after HTML rows for the fixable records."""
+        rows = []
+        for record in self._records:
+            if record.status != ui_flow.FIXABLE:
+                continue
+            old = record.current_date or "nessuna data"
+            new = record.creation_date or "—"
+            source = record.source or "nessuna origine"
+            rows.append(
+                "<div style='margin-bottom:4px;'>"
+                f"<span style='color:#1a1625'>{html.escape(record.filename)}</span>"
+                "&nbsp; "
+                f"<span style='color:#b3261e;text-decoration:line-through'>"
+                f"{html.escape(old)}</span> "
+                "<span style='color:#6d4aff'>→</span> "
+                f"<b style='color:#0e8a5f'>{html.escape(new)}</b> "
+                f"<span style='color:#9b94b8;font-size:11px;'>"
+                f"({html.escape(source)})</span>"
+                "</div>"
+            )
+        return rows
 
     def _apply_fixes(self) -> None:
         """Ask for confirmation, then fix the dates for real."""
@@ -686,7 +854,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         )
 
     def _on_fix_done(self, result) -> None:
-        """Show the final summary page."""
+        """Show the final summary page with its animated check."""
         self.fix_progress.finish()
         self.fix_preview_btn.setEnabled(True)
         self._fix_result = result
@@ -694,22 +862,52 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
             self.fix_result_label.setText("Correzione interrotta.")
             self.fix_apply_btn.setEnabled(True)
             return
-        no_date = [line for line in result.errors if "no valid date" in line]
+        left = result.processed - result.fixed
+        self.done_values["processed"].setText(str(result.processed))
+        self.done_values["fixed"].setText(str(result.fixed))
+        self.done_values["left"].setText(str(left))
         message = (
-            f"Corrette le date di {result.fixed} file su {result.processed}."
-        )
-        if no_date:
-            message += (
-                f"\n{len(no_date)} file senza una data trovabile sono stati lasciati "
-                "invariati: li trovi nell'anteprima."
-            )
-        message += (
-            "\n\nProssimo passo: importa le foto in Proton Drive "
+            "Tutto fatto! Prossimo passo: importa le foto in Proton Drive "
             "(proton.me/drive/import)."
         )
+        if left:
+            message = (
+                f"{left} file senza una data trovabile sono stati lasciati "
+                f"invariati.\n\n{message}"
+            )
         self.done_label.setText(message)
         self.done_log.setPlainText("\n".join(ui_flow.log_tail()))
         self._goto(self.page_done)
+        self._animate_check_badge()
+
+    def _animate_check_badge(self) -> None:
+        """Play the check-drawing animation on the done page."""
+        self._badge_animation = QtCore.QVariantAnimation(self)
+        self._badge_animation.setDuration(900)
+        self._badge_animation.setStartValue(0.0)
+        self._badge_animation.setEndValue(1.0)
+        self._badge_animation.valueChanged.connect(self._render_badge)
+        self._render_badge(0.0)
+        self._badge_animation.start()
+
+    def _render_badge(self, progress: float) -> None:
+        """Render the check badge SVG at the given drawing progress."""
+        offset = BADGE_PATH_LENGTH * (1.0 - float(progress))
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">'
+            '<circle cx="48" cy="48" r="44" fill="#e6f6ef"/>'
+            '<path d="M29 50 L44 64 L69 34" fill="none" stroke="#0e8a5f" '
+            'stroke-width="7" stroke-linecap="round" stroke-linejoin="round" '
+            f'stroke-dasharray="{BADGE_PATH_LENGTH}" stroke-dashoffset="{offset}"/>'
+            "</svg>"
+        )
+        renderer = QSvgRenderer(svg.encode("utf-8"))
+        pixmap = QtGui.QPixmap(96, 96)
+        pixmap.fill(Qt.transparent)
+        painter = QtGui.QPainter(pixmap)
+        renderer.render(painter)
+        painter.end()
+        self.done_badge.setPixmap(pixmap)
 
     def _toggle_log(self) -> None:
         """Show or hide the operation log."""

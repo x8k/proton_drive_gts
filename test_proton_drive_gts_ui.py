@@ -143,5 +143,71 @@ class TestFixFlow(UiSmokeTestCase):
         self.assertIn("1 file", self.window.fix_preview.toPlainText())
 
 
+class TestStepIndicator(UiSmokeTestCase):
+    """Tests for the wizard step breadcrumb."""
+
+    def test_indicator_marks_done_and_active(self):
+        """Test: completed steps show a check, the active one its number."""
+        indicator = ui.StepIndicator()
+        indicator.set_state(1, 1)
+        circles = indicator._circles  # pylint: disable=protected-access
+        self.assertEqual(circles[0].text(), "✓")
+        self.assertEqual(circles[1].text(), "2")
+        self.assertEqual(circles[2].text(), "3")
+
+    def test_goto_updates_indicator(self):
+        """Test: switching to a page refreshes the breadcrumb state."""
+        self.window._goto(self.window.page_scan)  # pylint: disable=protected-access
+        circles = self.window.step_indicator._circles  # pylint: disable=protected-access
+        self.assertEqual(circles[0].text(), "✓")
+
+
+class TestDragAndDrop(UiSmokeTestCase):
+    """Tests for the folder drag & drop support."""
+
+    def test_first_local_dir(self):
+        """Test: the first local directory among the URLs is returned."""
+        file_url = QtCore.QUrl.fromLocalFile(
+            os.path.join(self.temp_dir, "Google Foto", "a.jpg")
+        )
+        dir_url = QtCore.QUrl.fromLocalFile(self.temp_dir)
+        self.assertEqual(
+            ui.MainWindow._first_local_dir([file_url, dir_url]),
+            self.temp_dir,
+        )
+        self.assertIsNone(ui.MainWindow._first_local_dir([file_url]))
+
+
+class TestPreviewHtml(UiSmokeTestCase):
+    """Tests for the before → after preview."""
+
+    def test_preview_rows_show_before_and_after(self):
+        """Test: each fixable row shows the old and the new date."""
+        record = ui_flow.FileRecord(
+            "a.jpg", "a.jpg", "2024-05-10 08:00:00", "MD used", None,
+            "2020:01:15 12:00:00",
+        )
+        self.window._records = [record]  # pylint: disable=protected-access
+        html_text = "".join(  # pylint: disable=protected-access
+            self.window._preview_rows()
+        )
+        self.assertIn("2020:01:15 12:00:00", html_text)
+        self.assertIn("2024-05-10 08:00:00", html_text)
+        self.assertIn("→", html_text)
+
+
+class TestDonePage(UiSmokeTestCase):
+    """Tests for the celebratory done page."""
+
+    def test_done_page_shows_summary_cards(self):
+        """Test: the summary cards show the fix counts."""
+        result = ui_flow.FixResult(processed=21, fixed=7)
+        self.window._on_fix_done(result)  # pylint: disable=protected-access
+        values = self.window.done_values
+        self.assertEqual(values["processed"].text(), "21")
+        self.assertEqual(values["fixed"].text(), "7")
+        self.assertEqual(values["left"].text(), "14")
+
+
 if __name__ == "__main__":
     unittest.main()
