@@ -1,0 +1,375 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="740" viewBox="0 0 800 740" font-family="-apple-system,'Segoe UI',Ubuntu,'Helvetica Neue',sans-serif">
+  <title>Proton Drive GTS — demo animata del wizard</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ece9f7"/>
+      <stop offset="0.45" stop-color="#f6f5fb"/>
+      <stop offset="1" stop-color="#e8e4f5"/>
+    </linearGradient>
+    <filter id="winshadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1a1625" flood-opacity="0.22"/>
+    </filter>
+    <style><![CDATA[
+      .s1 { animation: k1 24s linear infinite; }
+      .s2 { animation: k2 24s linear infinite; }
+      .s3 { animation: k3 24s linear infinite; }
+      .s4 { animation: k4 24s linear infinite; }
+      .s5 { animation: k5 24s linear infinite; }
+      @keyframes k1 { 0% {opacity:1} 18% {opacity:1} 20.5% {opacity:0} 99% {opacity:0} 100% {opacity:1} }
+      @keyframes k2 { 0% {opacity:0} 18% {opacity:0} 20.5% {opacity:1} 36% {opacity:1} 38.5% {opacity:0} 100% {opacity:0} }
+      @keyframes k3 { 0% {opacity:0} 36% {opacity:0} 38.5% {opacity:1} 56% {opacity:1} 58.5% {opacity:0} 100% {opacity:0} }
+      @keyframes k4 { 0% {opacity:0} 56% {opacity:0} 58.5% {opacity:1} 80% {opacity:1} 82.5% {opacity:0} 100% {opacity:0} }
+      @keyframes k5 { 0% {opacity:0} 80% {opacity:0} 82.5% {opacity:1} 98% {opacity:1} 100% {opacity:0} }
+      .p8o { animation: k8o 24s linear infinite; }
+      .p8i { animation: k8i 24s linear infinite; }
+      @keyframes k8o { 0% {opacity:1} 8.5% {opacity:1} 10% {opacity:0} 100% {opacity:0} }
+      @keyframes k8i { 0% {opacity:0} 8.5% {opacity:0} 10% {opacity:1} 100% {opacity:1} }
+      .p26o { animation: k26o 24s linear infinite; }
+      .p26i { animation: k26i 24s linear infinite; }
+      @keyframes k26o { 0% {opacity:1} 25% {opacity:1} 27% {opacity:0} 100% {opacity:0} }
+      @keyframes k26i { 0% {opacity:0} 25% {opacity:0} 27% {opacity:1} 100% {opacity:1} }
+      .p27 { animation: k27 24s linear infinite; }
+      .p285 { animation: k285 24s linear infinite; }
+      .p30 { animation: k30 24s linear infinite; }
+      .p315 { animation: k315 24s linear infinite; }
+      @keyframes k27 { 0% {opacity:0} 26.5% {opacity:0} 28% {opacity:1} 100% {opacity:1} }
+      @keyframes k285 { 0% {opacity:0} 28% {opacity:0} 29.5% {opacity:1} 100% {opacity:1} }
+      @keyframes k30 { 0% {opacity:0} 29.5% {opacity:0} 31% {opacity:1} 100% {opacity:1} }
+      @keyframes k315 { 0% {opacity:0} 31% {opacity:0} 32.5% {opacity:1} 100% {opacity:1} }
+      .p40 { animation: k40 24s linear infinite; }
+      .p42 { animation: k42 24s linear infinite; }
+      .p44 { animation: k44 24s linear infinite; }
+      .p46 { animation: k46 24s linear infinite; }
+      @keyframes k40 { 0% {opacity:0} 39% {opacity:0} 40.5% {opacity:1} 100% {opacity:1} }
+      @keyframes k42 { 0% {opacity:0} 41% {opacity:0} 42.5% {opacity:1} 100% {opacity:1} }
+      @keyframes k44 { 0% {opacity:0} 43% {opacity:0} 44.5% {opacity:1} 100% {opacity:1} }
+      @keyframes k46 { 0% {opacity:0} 45% {opacity:0} 46.5% {opacity:1} 100% {opacity:1} }
+      .p48o { animation: k48o 24s linear infinite; }
+      @keyframes k48o { 0% {opacity:1} 46% {opacity:1} 48% {opacity:0} 100% {opacity:0} }
+      .p55o { animation: k55o 24s linear infinite; }
+      @keyframes k55o { 0% {opacity:1} 54% {opacity:1} 56% {opacity:0} 100% {opacity:0} }
+      .p63 { animation: k63 24s linear infinite; }
+      .p65 { animation: k65 24s linear infinite; }
+      .p67 { animation: k67 24s linear infinite; }
+      @keyframes k63 { 0% {opacity:0} 62% {opacity:0} 63.5% {opacity:1} 100% {opacity:1} }
+      @keyframes k65 { 0% {opacity:0} 64% {opacity:0} 65.5% {opacity:1} 100% {opacity:1} }
+      @keyframes k67 { 0% {opacity:0} 66% {opacity:0} 67.5% {opacity:1} 100% {opacity:1} }
+      .fly { animation: fly 24s linear infinite; }
+      @keyframes fly {
+        0% {opacity:0; transform:translate(0px,0px)}
+        3% {opacity:0; transform:translate(0px,0px)}
+        3.5% {opacity:1}
+        8% {opacity:1; transform:translate(-230px,355px)}
+        9.5% {opacity:0; transform:translate(-230px,355px)}
+        100% {opacity:0; transform:translate(-230px,355px)}
+      }
+      .indet { animation: slide 1.1s linear infinite; }
+      @keyframes slide { from {transform:translateX(-212px)} to {transform:translateX(608px)} }
+    ]]></style>
+  </defs>
+
+  <rect width="800" height="740" fill="url(#bg)"/>
+
+  <!-- window chrome -->
+  <g filter="url(#winshadow)">
+    <rect x="20" y="20" width="760" height="680" rx="12" fill="#f6f5fb" stroke="#ebe8f6"/>
+    <path d="M20 32 a12 12 0 0 1 12 -12 h736 a12 12 0 0 1 12 12 v28 h-760 z" fill="#efedf9"/>
+    <line x1="20" y1="60" x2="780" y2="60" stroke="#e3dff2"/>
+  </g>
+  <circle cx="34" cy="40" r="6" fill="#ff5f57"/>
+  <circle cx="52" cy="40" r="6" fill="#febc2e"/>
+  <circle cx="70" cy="40" r="6" fill="#28c840"/>
+  <path d="M280 34 h9 l3 3 h12 a2 2 0 0 1 2 2 v9 a2 2 0 0 1 -2 2 h-24 a2 2 0 0 1 -2 -2 v-12 a2 2 0 0 1 2 -2 z" fill="none" stroke="#6d4aff" stroke-width="1.6" stroke-linejoin="round"/>
+  <text x="406" y="45" text-anchor="middle" font-size="13" font-weight="600" fill="#4a4360">Sistema le foto per Proton Drive</text>
+
+  <!-- tour progress -->
+  <rect x="20" y="700" height="3" rx="1.5" fill="#6d4aff" width="0">
+    <animate attributeName="width" values="0;760" keyTimes="0;1" dur="24s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- ============ SCENA 1 · Benvenuto ============ -->
+  <g class="s1">
+    <circle cx="81" cy="110" r="13" fill="#6d4aff"/>
+    <text x="81" y="114.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">1</text>
+    <text x="100" y="115" font-size="13" font-weight="600" fill="#1a1625">Cartella</text>
+    <rect x="155" y="109" width="50" height="2" rx="1" fill="#ebe8f6"/>
+    <circle cx="218" cy="110" r="13" fill="#fff" stroke="#d9d5ee"/>
+    <text x="218" y="114.5" text-anchor="middle" font-size="13" font-weight="700" fill="#9b94b8">2</text>
+    <text x="237" y="115" font-size="13" font-weight="600" fill="#9b94b8">Analisi</text>
+    <rect x="290" y="109" width="50" height="2" rx="1" fill="#ebe8f6"/>
+    <circle cx="353" cy="110" r="13" fill="#fff" stroke="#d9d5ee"/>
+    <text x="353" y="114.5" text-anchor="middle" font-size="13" font-weight="700" fill="#9b94b8">3</text>
+    <text x="372" y="115" font-size="13" font-weight="600" fill="#9b94b8">Correzione</text>
+
+    <text x="68" y="154" font-size="13" font-weight="700" fill="#6d4aff" letter-spacing="1.5">PASSO 1 DI 3</text>
+    <text x="68" y="184" font-size="26" font-weight="700" fill="#1a1625">Sistema le date delle tue foto</text>
+    <text x="68" y="212" font-size="15" fill="#6b6480">Prima di importare le foto in Proton Drive, questo programma controlla e</text>
+    <text x="68" y="233" font-size="15" fill="#6b6480">corregge le date di creazione. Nessuna foto viene cancellata o modificata.</text>
+
+    <rect x="68" y="252" width="664" height="336" rx="14" fill="#fff" stroke="#ebe8f6"/>
+    <g class="p8o">
+      <text x="96" y="290" font-size="15" fill="#1a1625">Cartella non selezionata — premi il pulsante qui sotto.</text>
+    </g>
+    <g class="p8i">
+      <text x="96" y="290" font-size="15" fill="#1a1625">Cartella: /Users/mamma/Downloads/Takeout</text>
+      <text x="96" y="312" font-size="14" fill="#6b6480">Archivi trovati: Google Foto</text>
+    </g>
+    <rect x="96" y="330" width="310" height="48" rx="10" fill="#6d4aff"/>
+    <text x="251" y="360" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">Scegli la cartella dell'archivio</text>
+    <g class="p8o">
+      <rect x="96" y="390" width="200" height="48" rx="10" fill="#d9d5ee"/>
+      <text x="196" y="420" text-anchor="middle" font-size="15" font-weight="600" fill="#9b94b8">Analizza le foto</text>
+    </g>
+    <g class="p8i">
+      <rect x="96" y="390" width="200" height="48" rx="10" fill="#6d4aff"/>
+      <text x="196" y="420" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">Analizza le foto</text>
+    </g>
+    <g class="p8o">
+      <rect x="96" y="456" width="608" height="92" rx="12" fill="#fbfaff" stroke="#c9c0f0" stroke-width="2" stroke-dasharray="7 6"/>
+      <text x="400" y="496" text-anchor="middle" font-size="13" font-weight="600" fill="#6b6480">oppure trascina qui la cartella dell'archivio</text>
+      <text x="400" y="520" text-anchor="middle" font-size="11" fill="#9b94b8">Funziona in qualsiasi momento: trascina una cartella sulla finestra.</text>
+    </g>
+    <g class="p8i">
+      <rect x="96" y="456" width="608" height="92" rx="12" fill="#f1eefe" stroke="#6d4aff" stroke-width="2" stroke-dasharray="7 6"/>
+      <text x="400" y="496" text-anchor="middle" font-size="13" font-weight="600" fill="#6d4aff">oppure trascina qui la cartella dell'archivio</text>
+      <text x="400" y="520" text-anchor="middle" font-size="11" fill="#9b94b8">Funziona in qualsiasi momento: trascina una cartella sulla finestra.</text>
+    </g>
+    <g class="fly">
+      <path d="M602 122 h22 l5 5 h21 a3 3 0 0 1 3 3 v16 a3 3 0 0 1 -3 3 h-48 a3 3 0 0 1 -3 -3 v-21 a3 3 0 0 1 3 -3 z" fill="#fff" stroke="#6d4aff" stroke-width="2" stroke-linejoin="round"/>
+      <text x="625" y="141" text-anchor="middle" font-size="9" font-weight="700" fill="#6d4aff">Takeout</text>
+    </g>
+    <rect x="68" y="612" width="380" height="40" rx="10" fill="#fff" stroke="#c9c0f0"/>
+    <text x="258" y="637" text-anchor="middle" font-size="14" font-weight="600" fill="#6d4aff">Strumenti avanzati (metadati JSON, album)</text>
+    <text x="400" y="726" text-anchor="middle" font-size="12.5" fill="#6b6480">1 · Benvenuto — scegli o trascina la cartella dell'archivio</text>
+  </g>
+
+  <!-- ============ SCENA 2 · Analisi ============ -->
+  <g class="s2">
+    <circle cx="81" cy="110" r="13" fill="#0e8a5f"/>
+    <text x="81" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text>
+    <text x="100" y="115" font-size="13" font-weight="600" fill="#0e8a5f">Cartella</text>
+    <rect x="155" y="109" width="50" height="2" rx="1" fill="#0e8a5f"/>
+    <circle cx="218" cy="110" r="13" fill="#6d4aff"/>
+    <text x="218" y="114.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">2</text>
+    <text x="237" y="115" font-size="13" font-weight="600" fill="#1a1625">Analisi</text>
+    <rect x="290" y="109" width="50" height="2" rx="1" fill="#ebe8f6"/>
+    <circle cx="353" cy="110" r="13" fill="#fff" stroke="#d9d5ee"/>
+    <text x="353" y="114.5" text-anchor="middle" font-size="13" font-weight="700" fill="#9b94b8">3</text>
+    <text x="372" y="115" font-size="13" font-weight="600" fill="#9b94b8">Correzione</text>
+
+    <text x="68" y="154" font-size="13" font-weight="700" fill="#6d4aff" letter-spacing="1.5">PASSO 2 DI 3</text>
+    <text x="68" y="184" font-size="26" font-weight="700" fill="#1a1625">Analisi dell'archivio</text>
+    <text x="68" y="212" font-size="15" fill="#6b6480">Controllo le date di creazione di ogni foto e video.</text>
+
+    <rect x="68" y="240" width="664" height="436" rx="14" fill="#fff" stroke="#ebe8f6"/>
+    <g class="p26o">
+      <text x="96" y="272" font-size="13" fill="#4a4360">Analisi in corso…</text>
+      <rect x="96" y="284" width="608" height="14" rx="7" fill="#ebe8f6"/>
+      <rect class="indet" x="96" y="284" width="212" height="14" rx="7" fill="#6d4aff"/>
+      <rect x="96" y="310" width="130" height="32" rx="8" fill="#fff" stroke="#c9c0f0"/>
+      <text x="161" y="331" text-anchor="middle" font-size="12" font-weight="600" fill="#6d4aff">Interrompi</text>
+    </g>
+    <g class="p26i">
+      <text x="96" y="272" font-size="13" fill="#4a4360">Analisi completata: 21 file controllati.</text>
+      <rect x="96" y="284" width="608" height="14" rx="7" fill="#ebe8f6"/>
+      <rect x="96" y="284" width="608" height="14" rx="7" fill="#6d4aff"/>
+    </g>
+    <g class="p26i">
+      <rect x="96" y="312" width="192" height="88" rx="14" fill="#fff" stroke="#ebe8f6"/>
+      <text x="192" y="357" text-anchor="middle" font-size="30" font-weight="700" fill="#0e8a5f">12</text>
+      <text x="192" y="380" text-anchor="middle" font-size="13" fill="#6b6480">Foto già a posto</text>
+      <rect x="302" y="312" width="192" height="88" rx="14" fill="#fff" stroke="#ebe8f6"/>
+      <text x="398" y="357" text-anchor="middle" font-size="30" font-weight="700" fill="#6d4aff">7</text>
+      <text x="398" y="380" text-anchor="middle" font-size="13" fill="#6b6480">Foto da correggere</text>
+      <rect x="508" y="312" width="192" height="88" rx="14" fill="#fff" stroke="#ebe8f6"/>
+      <text x="604" y="357" text-anchor="middle" font-size="30" font-weight="700" fill="#b7791f">2</text>
+      <text x="604" y="380" text-anchor="middle" font-size="13" fill="#6b6480">Foto senza data</text>
+    </g>
+    <g class="p26i">
+      <rect x="96" y="412" width="608" height="180" rx="8" fill="#fff" stroke="#ebe8f6"/>
+      <path d="M96 420 a8 8 0 0 1 8 -8 h592 a8 8 0 0 1 8 8 v22 h-608 z" fill="#f6f5fb"/>
+      <text x="108" y="434" font-size="12.5" font-weight="600" fill="#6b6480">File</text>
+      <text x="390" y="434" font-size="12.5" font-weight="600" fill="#6b6480">Data trovata</text>
+      <text x="560" y="434" font-size="12.5" font-weight="600" fill="#6b6480">Origine</text>
+      <line x1="96" y1="442" x2="704" y2="442" stroke="#f1eefb"/>
+    </g>
+    <g class="p27">
+      <text x="108" y="464" font-size="12.5" fill="#1a1625">Album vacanze/IMG_20240715_102030.jpg</text>
+      <text x="390" y="464" font-size="12.5" fill="#1a1625">2024-07-15 10:20:30</text>
+      <text x="560" y="464" font-size="12.5" fill="#1a1625">EXIF DateTimeOriginal</text>
+      <line x1="96" y1="472" x2="704" y2="472" stroke="#f1eefb"/>
+    </g>
+    <g class="p285">
+      <text x="108" y="494" font-size="12.5" fill="#1a1625">Album vacanze/PXL_20240720_183310123.jpg</text>
+      <text x="390" y="494" font-size="12.5" fill="#1a1625">2024-07-20 18:33:10</text>
+      <text x="560" y="494" font-size="12.5" fill="#1a1625">JSON di Google</text>
+      <line x1="96" y1="502" x2="704" y2="502" stroke="#f1eefb"/>
+    </g>
+    <g class="p30">
+      <text x="108" y="524" font-size="12.5" fill="#1a1625">Album vacanze/foto_senza_data.jpg</text>
+      <text x="390" y="524" font-size="12.5" fill="#1a1625">—</text>
+      <text x="560" y="524" font-size="12.5" fill="#1a1625">nessuna data</text>
+      <line x1="96" y1="532" x2="704" y2="532" stroke="#f1eefb"/>
+    </g>
+    <g class="p315">
+      <text x="108" y="554" font-size="12.5" fill="#1a1625">Album vacanze/screenshot_02.png</text>
+      <text x="390" y="554" font-size="12.5" fill="#1a1625">2024-08-01 09:14:00</text>
+      <text x="560" y="554" font-size="12.5" fill="#1a1625">Nome del file</text>
+    </g>
+    <rect x="96" y="612" width="160" height="44" rx="10" fill="#fff" stroke="#c9c0f0"/>
+    <text x="176" y="639" text-anchor="middle" font-size="14" font-weight="600" fill="#6d4aff">Cambia cartella</text>
+    <rect x="524" y="612" width="180" height="44" rx="10" fill="#6d4aff"/>
+    <text x="614" y="639" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">Correggi le date</text>
+    <text x="400" y="726" text-anchor="middle" font-size="12.5" fill="#6b6480">2 · Analisi — 21 file controllati: 12 a posto, 7 da correggere</text>
+  </g>
+
+  <!-- ============ SCENA 3 · Correzione ============ -->
+  <g class="s3">
+    <circle cx="81" cy="110" r="13" fill="#0e8a5f"/>
+    <text x="81" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text>
+    <text x="100" y="115" font-size="13" font-weight="600" fill="#0e8a5f">Cartella</text>
+    <rect x="155" y="109" width="50" height="2" rx="1" fill="#0e8a5f"/>
+    <circle cx="218" cy="110" r="13" fill="#0e8a5f"/>
+    <text x="218" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text>
+    <text x="237" y="115" font-size="13" font-weight="600" fill="#0e8a5f">Analisi</text>
+    <rect x="290" y="109" width="50" height="2" rx="1" fill="#0e8a5f"/>
+    <circle cx="353" cy="110" r="13" fill="#6d4aff"/>
+    <text x="353" y="114.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">3</text>
+    <text x="372" y="115" font-size="13" font-weight="600" fill="#1a1625">Correzione</text>
+
+    <text x="68" y="154" font-size="13" font-weight="700" fill="#6d4aff" letter-spacing="1.5">PASSO 3 DI 3</text>
+    <text x="68" y="184" font-size="26" font-weight="700" fill="#1a1625">Correzione delle date</text>
+    <text x="68" y="212" font-size="15" fill="#6b6480">Prima guarda cosa verrà fatto, poi confermi. Nessuna modifica viene</text>
+    <text x="68" y="233" font-size="15" fill="#6b6480">eseguita senza il tuo consenso.</text>
+
+    <rect x="68" y="252" width="664" height="404" rx="14" fill="#fff" stroke="#ebe8f6"/>
+    <text x="96" y="284" font-size="15" fill="#1a1625">Verranno corrette le date di 7 file su 21. La data viene presa dall'EXIF,</text>
+    <text x="96" y="306" font-size="15" fill="#1a1625">dai file JSON di Google, dal nome del file o dal nome della cartella.</text>
+    <rect x="96" y="324" width="608" height="158" rx="10" fill="#fff" stroke="#ebe8f6"/>
+    <text x="108" y="350" font-size="12.5" font-weight="600" fill="#1a1625" font-family="ui-monospace,Menlo,monospace">Verranno corretti 7 file:</text>
+    <g class="p40" font-family="ui-monospace,Menlo,monospace" font-size="11.5">
+      <text x="108" y="376" fill="#1a1625">Album vacanze/IMG_20240715_102030.jpg</text>
+      <text x="370" y="376" fill="#b3261e">2020:01:15 12:00:00</text>
+      <line x1="371" y1="372.5" x2="499" y2="372.5" stroke="#b3261e"/>
+      <text x="510" y="376" fill="#6d4aff">&#8594;</text>
+      <text x="528" y="376" font-weight="700" fill="#0e8a5f">2024-07-15 10:20:30</text>
+      <text x="672" y="376" font-size="10" fill="#9b94b8">(EXIF)</text>
+    </g>
+    <g class="p42" font-family="ui-monospace,Menlo,monospace" font-size="11.5">
+      <text x="108" y="402" fill="#1a1625">Album vacanze/PXL_20240720_183310123.jpg</text>
+      <text x="378" y="402" fill="#b3261e">2025:03:02 09:41:57</text>
+      <line x1="379" y1="398.5" x2="502" y2="398.5" stroke="#b3261e"/>
+      <text x="512" y="402" fill="#6d4aff">&#8594;</text>
+      <text x="530" y="402" font-weight="700" fill="#0e8a5f">2024-07-20 18:33:10</text>
+      <text x="672" y="402" font-size="10" fill="#9b94b8">(JSON)</text>
+    </g>
+    <g class="p44" font-family="ui-monospace,Menlo,monospace" font-size="11.5">
+      <text x="108" y="428" fill="#1a1625">Album vacanze/screenshot_02.png</text>
+      <text x="330" y="428" fill="#b3261e">nessuna data</text>
+      <text x="423" y="428" fill="#6d4aff">&#8594;</text>
+      <text x="441" y="428" font-weight="700" fill="#0e8a5f">2024-08-01 09:14:00</text>
+      <text x="584" y="428" font-size="10" fill="#9b94b8">(nome del file)</text>
+    </g>
+    <g class="p46">
+      <text x="108" y="452" font-size="12" fill="#6b6480" font-family="ui-monospace,Menlo,monospace">… e altri 4 file.</text>
+    </g>
+    <g class="p46">
+      <rect x="96" y="496" width="608" height="14" rx="7" fill="#ebe8f6"/>
+      <rect x="96" y="496" height="14" rx="7" fill="#6d4aff" width="0">
+        <animate attributeName="width" values="0;0;608;608" keyTimes="0;0.46;0.55;1" dur="24s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+    <g class="p55o">
+      <text x="96" y="530" font-size="13" fill="#4a4360">Aggiornamento date…</text>
+    </g>
+    <rect x="96" y="548" width="250" height="44" rx="10" fill="#6d4aff"/>
+    <text x="221" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">Anteprima delle modifiche</text>
+    <g class="p48o">
+      <rect x="366" y="548" width="220" height="44" rx="10" fill="#d9d5ee"/>
+      <text x="476" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#9b94b8">Applica le correzioni</text>
+    </g>
+    <g class="p46">
+      <rect x="366" y="548" width="220" height="44" rx="10" fill="#6d4aff"/>
+      <text x="476" y="576" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">Applica le correzioni</text>
+      <text x="96" y="624" font-size="14" fill="#6b6480">7 file verranno corretti. Controlla l'anteprima e premi «Applica le correzioni».</text>
+    </g>
+    <text x="400" y="726" text-anchor="middle" font-size="12.5" fill="#6b6480">3 · Correzione — anteprima prima/dopo e applicazione</text>
+  </g>
+
+  <!-- ============ SCENA 4 · Fatto! ============ -->
+  <g class="s4">
+    <circle cx="81" cy="110" r="13" fill="#0e8a5f"/>
+    <text x="81" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text>
+    <text x="100" y="115" font-size="13" font-weight="600" fill="#0e8a5f">Cartella</text>
+    <rect x="155" y="109" width="50" height="2" rx="1" fill="#0e8a5f"/>
+    <circle cx="218" cy="110" r="13" fill="#0e8a5f"/>
+    <text x="218" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text>
+    <text x="237" y="115" font-size="13" font-weight="600" fill="#0e8a5f">Analisi</text>
+    <rect x="290" y="109" width="50" height="2" rx="1" fill="#0e8a5f"/>
+    <circle cx="353" cy="110" r="13" fill="#0e8a5f"/>
+    <text x="353" y="115" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">&#10003;</text>
+    <text x="372" y="115" font-size="13" font-weight="600" fill="#0e8a5f">Correzione</text>
+
+    <text x="68" y="154" font-size="13" font-weight="700" fill="#6d4aff" letter-spacing="1.5">FATTO!</text>
+    <text x="68" y="184" font-size="26" font-weight="700" fill="#1a1625">Date sistemate</text>
+    <text x="68" y="212" font-size="15" fill="#6b6480">Le tue foto sono pronte per l'importazione in Proton Drive.</text>
+
+    <rect x="68" y="240" width="664" height="428" rx="14" fill="#fff" stroke="#ebe8f6"/>
+    <circle cx="400" cy="300" r="40" fill="#e6f6ef">
+      <animate attributeName="r" values="40;40;48;48" keyTimes="0;0.585;0.61;1" dur="24s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M378 302 L392 315 L424 281" fill="none" stroke="#0e8a5f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" pathLength="60" stroke-dasharray="60" stroke-dashoffset="60">
+      <animate attributeName="stroke-dashoffset" values="60;60;0;0" keyTimes="0;0.60;0.64;1" dur="24s" repeatCount="indefinite"/>
+    </path>
+    <g class="p63">
+      <rect x="96" y="372" width="192" height="88" rx="14" fill="#fff" stroke="#ebe8f6"/>
+      <text x="192" y="417" text-anchor="middle" font-size="30" font-weight="700" fill="#6d4aff">21</text>
+      <text x="192" y="440" text-anchor="middle" font-size="13" fill="#6b6480">File controllati</text>
+    </g>
+    <g class="p65">
+      <rect x="302" y="372" width="192" height="88" rx="14" fill="#fff" stroke="#ebe8f6"/>
+      <text x="398" y="417" text-anchor="middle" font-size="30" font-weight="700" fill="#0e8a5f">7</text>
+      <text x="398" y="440" text-anchor="middle" font-size="13" fill="#6b6480">Date corrette</text>
+    </g>
+    <g class="p67">
+      <rect x="508" y="372" width="192" height="88" rx="14" fill="#fff" stroke="#ebe8f6"/>
+      <text x="604" y="417" text-anchor="middle" font-size="30" font-weight="700" fill="#b7791f">2</text>
+      <text x="604" y="440" text-anchor="middle" font-size="13" fill="#6b6480">Lasciate senza data</text>
+    </g>
+    <text x="400" y="492" text-anchor="middle" font-size="15" fill="#1a1625">2 file senza una data trovabile sono stati lasciati invariati.</text>
+    <text x="400" y="514" text-anchor="middle" font-size="15" fill="#1a1625">Tutto fatto! Prossimo passo: importa le foto in Proton Drive (proton.me/drive/import).</text>
+    <rect x="96" y="540" width="190" height="40" rx="10" fill="#fff" stroke="#c9c0f0"/>
+    <text x="191" y="565" text-anchor="middle" font-size="13" font-weight="600" fill="#6d4aff">Mostra il registro</text>
+    <rect x="296" y="540" width="180" height="40" rx="10" fill="#fff" stroke="#c9c0f0"/>
+    <text x="386" y="565" text-anchor="middle" font-size="13" font-weight="600" fill="#6d4aff">Strumenti avanzati</text>
+    <rect x="486" y="540" width="218" height="40" rx="10" fill="#6d4aff"/>
+    <text x="595" y="565" text-anchor="middle" font-size="12.5" font-weight="600" fill="#fff">Ricomincia con un'altra cartella</text>
+    <text x="400" y="726" text-anchor="middle" font-size="12.5" fill="#6b6480">Fatto! — date corrette: pronto per l'importazione in Proton Drive</text>
+  </g>
+
+  <!-- ============ SCENA 5 · Strumenti avanzati ============ -->
+  <g class="s5">
+    <text x="68" y="154" font-size="13" font-weight="700" fill="#6d4aff" letter-spacing="1.5">STRUMENTI AVANZATI</text>
+    <text x="68" y="184" font-size="26" font-weight="700" fill="#1a1625">Metadati e album</text>
+    <text x="68" y="212" font-size="15" fill="#6b6480">Operazioni opzionali, da usare dopo aver corretto le date.</text>
+
+    <rect x="68" y="240" width="664" height="428" rx="14" fill="#fff" stroke="#ebe8f6"/>
+    <text x="96" y="278" font-size="15" font-weight="600" fill="#1a1625">Sposta i metadati JSON</text>
+    <text x="96" y="302" font-size="14" fill="#6b6480">Raccoglie i file .supplemental-metadata.json in una cartella</text>
+    <text x="96" y="324" font-size="14" fill="#6b6480">google_takeout_metadata, per un archivio più pulito.</text>
+    <rect x="96" y="344" width="100" height="36" rx="8" fill="#fff" stroke="#c9c0f0"/>
+    <text x="146" y="367" text-anchor="middle" font-size="13" font-weight="600" fill="#6d4aff">Sposta</text>
+    <rect x="206" y="344" width="110" height="36" rx="8" fill="#fff" stroke="#c9c0f0"/>
+    <text x="261" y="367" text-anchor="middle" font-size="13" font-weight="600" fill="#6d4aff">Ripristina</text>
+    <text x="96" y="416" font-size="15" font-weight="600" fill="#1a1625">Crea gli album su Proton Drive</text>
+    <text x="96" y="440" font-size="14" fill="#6b6480">Crea un album per ogni cartella dell'archivio e aggiunge le foto.</text>
+    <text x="96" y="462" font-size="14" fill="#6b6480">Richiede l'applicazione proton-drive installata e collegata.</text>
+    <rect x="96" y="482" width="140" height="36" rx="8" fill="#6d4aff"/>
+    <text x="166" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Crea album</text>
+    <rect x="96" y="534" width="608" height="56" rx="10" fill="#fff" stroke="#ebe8f6"/>
+    <text x="108" y="567" font-size="12" fill="#6b6480" font-family="ui-monospace,Menlo,monospace">L'output delle operazioni apparirà qui.</text>
+    <rect x="96" y="612" width="150" height="36" rx="8" fill="#fff" stroke="#c9c0f0"/>
+    <text x="171" y="635" text-anchor="middle" font-size="13" font-weight="600" fill="#6d4aff">Torna all'inizio</text>
+    <text x="400" y="726" text-anchor="middle" font-size="12.5" fill="#6b6480">Strumenti avanzati — metadati JSON e album su Proton Drive</text>
+  </g>
+</svg>

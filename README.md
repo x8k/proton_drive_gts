@@ -22,6 +22,8 @@ analyze the photos, preview the fixes, apply them, then optionally move
 the JSON metadata and create the Proton Drive albums. Nothing is changed
 without an explicit preview and confirmation.
 
+![Animated walkthrough of the wizard](docs/ui-demo.svg)
+
 ## Contribute
 
 Tests and linting:
