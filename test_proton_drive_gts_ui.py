@@ -22,7 +22,6 @@ except ImportError as exc:  # pragma: no cover
     raise unittest.SkipTest(f"UI dependencies not available: {exc}") from exc
 
 from PySide6 import QtCore, QtWidgets
-from PySide6.QtCore import Qt
 
 TIMEOUT_MS = 5000
 
