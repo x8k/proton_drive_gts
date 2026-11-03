@@ -29,5 +29,5 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -m pylint proton_drive_gts.py test_proton_drive_gts.py
-          python -m pylint ui_flow.py proton_drive_gts_ui.py test_ui_flow.py test_proton_drive_gts_ui.py
+          python -m pylint --output-format=github proton_drive_gts.py test_proton_drive_gts.py
+          python -m pylint --output-format=github ui_flow.py proton_drive_gts_ui.py test_ui_flow.py test_proton_drive_gts_ui.py
