@@ -22,6 +22,7 @@ except ImportError as exc:  # pragma: no cover
     raise unittest.SkipTest(f"UI dependencies not available: {exc}") from exc
 
 from PySide6 import QtCore, QtWidgets
+from PySide6.QtCore import Qt
 
 TIMEOUT_MS = 5000
 
@@ -51,7 +52,7 @@ class UiSmokeTestCase(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.original_dir = os.getcwd()
         os.makedirs(os.path.join(self.temp_dir, "Google Foto"), exist_ok=True)
-        with open(os.path.join(self.temp_dir, "Google Foto", "a.jpg"), "w") as f:
+        with open(os.path.join(self.temp_dir, "Google Foto", "a.jpg"), "w", encoding="utf-8") as f:
             f.write("x")
         self.window = ui.MainWindow()
 
@@ -108,6 +109,22 @@ class TestScanFlow(UiSmokeTestCase):
             self.window._start_scan()  # pylint: disable=protected-access
             self.assertTrue(wait_until(self.window.scan_status.isVisible))
         self.assertIn("interrotta", self.window.scan_status.text())
+
+
+class TestWorker(UiSmokeTestCase):
+    """Tests for the background worker plumbing."""
+
+    def test_worker_forwards_kwargs(self):
+        """Test: job kwargs (e.g. dry_run) reach the callable."""
+        seen = {}
+
+        def fn(progress, cancel, dry_run=False):
+            seen["dry_run"] = dry_run
+            return seen
+
+        worker = ui.Worker(fn, dry_run=True)
+        worker.run()
+        self.assertTrue(seen["dry_run"])
 
 
 class TestFixFlow(UiSmokeTestCase):
