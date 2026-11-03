@@ -143,11 +143,13 @@ class Worker(QtCore.QObject):
     def run(self) -> None:
         """Execute the callable and emit the result or the failure."""
         try:
-            result = self._fn(progress=self.emit_progress, cancel=self.cancel)
+            result = self._fn(
+                progress=self.emit_progress, cancel=self.cancel, **self._kwargs
+            )
             self.finished.emit(result)
         except ui_flow.OperationCancelled:
             self.finished.emit(None)
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             self.failed.emit(str(exc))
 
     def emit_progress(self, done: int, total: int, line: str) -> None:
@@ -475,7 +477,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         card.body.addWidget(QtWidgets.QLabel("Sposta i metadati JSON"))
         json_hint = QtWidgets.QLabel(
             "Raccoglie i file .supplemental-metadata.json in una cartella "
-            "google_takeout_metadata, per un'archivio più pulito."
+            "google_takeout_metadata, per un archivio più pulito."
         )
         json_hint.setStyleSheet("color:#6b6480;")
         json_hint.setWordWrap(True)
