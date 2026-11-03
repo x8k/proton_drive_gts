@@ -8,6 +8,20 @@ Normalize and fix creation dates for media files exported from Google Photos.
 pip install -r requirements.txt
 ```
 
+## GUI (macOS and Linux)
+
+A guided desktop interface is available for non-technical users:
+
+```bash
+pip install PySide6
+python proton_drive_gts_ui.py
+```
+
+The wizard walks through the whole process: choose the export folder,
+analyze the photos, preview the fixes, apply them, then optionally move
+the JSON metadata and create the Proton Drive albums. Nothing is changed
+without an explicit preview and confirmation.
+
 ## Contribute
 
 Tests and linting:
