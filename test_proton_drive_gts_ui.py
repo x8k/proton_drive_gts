@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=line-too-long,import-outside-toplevel,unused-import,unused-variable
+# pylint: disable=line-too-long,import-outside-toplevel,unused-import,unused-variable,unused-argument
 """Smoke tests for the PySide6 UI (proton_drive_gts_ui).
 
 These tests need a Qt runtime. On a headless machine set

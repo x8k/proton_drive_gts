@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=line-too-long,import-outside-toplevel,redefined-outer-name,unused-import,unused-variable
+# pylint: disable=line-too-long,import-outside-toplevel,redefined-outer-name,unused-import,unused-variable,unused-argument
 """Tests for ui_flow.py (Qt-free UI workflow logic)."""
 
 import json

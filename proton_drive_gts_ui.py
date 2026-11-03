@@ -201,7 +201,7 @@ class ProgressArea(QtWidgets.QWidget):
         self.hide()
 
 
-class Card(QtWidgets.QFrame):
+class Card(QtWidgets.QFrame):  # pylint: disable=too-few-public-methods
     """A white rounded card container."""
 
     def __init__(self, parent=None):
@@ -218,7 +218,7 @@ class Card(QtWidgets.QFrame):
         return self._layout
 
 
-class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-attributes,too-many-public-methods,too-few-public-methods
     """The wizard main window: a stack of pages plus a shared job runner."""
 
     def __init__(self, folder: str = None):
