@@ -27,13 +27,14 @@ ensure_deps() {
 run_tests() {
     ensure_deps
     echo "=== Running Tests ==="
-    python3 -m pytest test_proton_drive_gts.py -v
+    QT_QPA_PLATFORM=offscreen python3 -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py test_ui_canary.py -v
 }
 
 run_linter() {
     ensure_deps
     echo "=== Running Linter (pylint) ==="
     python3 -m pylint proton_drive_gts.py test_proton_drive_gts.py
+    QT_QPA_PLATFORM=offscreen python3 -m pylint ui_flow.py proton_drive_gts_ui.py test_ui_flow.py test_proton_drive_gts_ui.py
 }
 
 case "${1:-}" in
