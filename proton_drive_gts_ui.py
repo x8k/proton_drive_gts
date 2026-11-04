@@ -284,7 +284,7 @@ class StepIndicator(QtWidgets.QWidget):  # pylint: disable=too-few-public-method
 class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-attributes,too-many-public-methods,too-few-public-methods,too-many-statements
     """The wizard main window: a stack of pages plus a shared job runner."""
 
-    def __init__(self, folder: str = None):
+    def __init__(self, folder: str = None):  # pylint: disable=too-many-statements
         """Build the window and show the welcome page."""
         super().__init__()
         self.setWindowTitle(APP_NAME)
