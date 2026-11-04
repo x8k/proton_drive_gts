@@ -32,9 +32,6 @@ jobs:
           set -o pipefail
           status=0
           python -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py test_ui_canary.py -v --tb=line 2>&1 | tee pytest_output.txt || status=$?
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat pytest_output.txt >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
           grep -E "^(FAILED|ERROR) " pytest_output.txt | while read -r line; do
             echo "::error::${line:0:600}"
           done || true
