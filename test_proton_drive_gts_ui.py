@@ -106,8 +106,34 @@ class TestScanFlow(UiSmokeTestCase):
         self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
         with patch.object(ui_flow, "scan_folder", return_value=None):
             self.window._start_scan()  # pylint: disable=protected-access
-            self.assertTrue(wait_until(self.window.scan_status.isVisible))
+            self.assertTrue(
+                wait_until(lambda: "interrotta" in self.window.scan_status.text())
+            )
         self.assertIn("interrotta", self.window.scan_status.text())
+
+
+class TestScanNavigation(UiSmokeTestCase):
+    """Tests for the wizard page navigation during the analysis."""
+
+    def test_scan_moves_to_scan_page(self):
+        """Test: starting the analysis switches to the scan page."""
+        self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
+        with patch.object(ui_flow, "scan_folder", return_value=None):
+            self.window._start_scan()  # pylint: disable=protected-access
+            self.assertEqual(
+                self.window.stack.currentWidget(), self.window.page_scan
+            )
+            self.assertTrue(
+                wait_until(lambda: "interrotta" in self.window.scan_status.text())
+            )
+
+    def test_welcome_reachable_again_from_scan_page(self):
+        """Test: the welcome page can be reached again from the scan page."""
+        self.window._goto(self.window.page_scan)  # pylint: disable=protected-access
+        self.window._goto(self.window.page_welcome)  # pylint: disable=protected-access
+        self.assertEqual(
+            self.window.stack.currentWidget(), self.window.page_welcome
+        )
 
 
 class TestWorker(UiSmokeTestCase):
@@ -196,17 +222,145 @@ class TestPreviewHtml(UiSmokeTestCase):
         self.assertIn("→", html_text)
 
 
+class TestFixableFilepaths(UiSmokeTestCase):
+    """Tests for the fixable-only selection passed to fix_dates."""
+
+    def test_fixable_filepaths_filters_records(self):
+        """Test: only FIXABLE records are returned, in order."""
+        records = [
+            ui_flow.FileRecord("fix.jpg", "fix.jpg", "2024-01-01 00:00:00", "MD used", None, None),
+            ui_flow.FileRecord("ok.jpg", "ok.jpg", "2024-01-01 00:00:00", "", None, None),
+            ui_flow.FileRecord("none.jpg", "none.jpg", None, "", None, None),
+        ]
+        self.window._records = records  # pylint: disable=protected-access
+        self.assertEqual(
+            self.window._fixable_filepaths(),  # pylint: disable=protected-access
+            ["fix.jpg"],
+        )
+
+    def test_preview_passes_fixable_filepaths(self):
+        """Test: the dry-run receives only the fixable file paths."""
+        self.window._records = [  # pylint: disable=protected-access
+            ui_flow.FileRecord("fix.jpg", "fix.jpg", "2024-01-01 00:00:00", "MD used", None, None)
+        ]
+        self.window._summary = ui_flow.ScanSummary(total=1, fixable=1)  # pylint: disable=protected-access
+        seen = {}
+
+        def fake_fix(**kwargs):
+            seen.update(kwargs)
+            return ui_flow.FixResult(processed=1, fixed=1)
+
+        self.window._show_fix_page()  # pylint: disable=protected-access
+        with patch.object(ui_flow, "fix_dates", side_effect=fake_fix):
+            self.window._start_preview()  # pylint: disable=protected-access
+            self.assertTrue(
+                wait_until(lambda: self.window.fix_apply_btn.isEnabled())
+            )
+        self.assertEqual(seen.get("filepaths"), ["fix.jpg"])
+        self.assertTrue(seen.get("dry_run"))
+
+
+class TestFailureRecovery(UiSmokeTestCase):
+    """Tests for recovering from job failures on the fix page."""
+
+    def test_failure_reenables_apply_after_preview(self):
+        """Test: after a preview, a failure re-enables preview and apply."""
+        self.window._preview_done = True  # pylint: disable=protected-access
+        self.window.fix_preview_btn.setEnabled(False)
+        self.window.fix_apply_btn.setEnabled(False)
+        with patch.object(QtWidgets.QMessageBox, "critical"):
+            self.window._on_job_failed("boom")  # pylint: disable=protected-access
+        self.assertTrue(self.window.fix_preview_btn.isEnabled())
+        self.assertTrue(self.window.fix_apply_btn.isEnabled())
+
+    def test_failure_keeps_apply_locked_without_preview(self):
+        """Test: without a preview, a failure does not unlock the apply."""
+        self.window._preview_done = False  # pylint: disable=protected-access
+        self.window.fix_preview_btn.setEnabled(False)
+        self.window.fix_apply_btn.setEnabled(False)
+        with patch.object(QtWidgets.QMessageBox, "critical"):
+            self.window._on_job_failed("boom")  # pylint: disable=protected-access
+        self.assertTrue(self.window.fix_preview_btn.isEnabled())
+        self.assertFalse(self.window.fix_apply_btn.isEnabled())
+
+
+class FakeThread:
+    """Minimal stand-in for a busy QThread."""
+
+    def isRunning(self):
+        """Pretend the job thread is busy."""
+        return True
+
+    def quit(self):
+        """No-op matching the QThread API used on close."""
+
+    def wait(self, timeout):
+        """No-op matching the QThread API used on close."""
+
+
+class TestFolderSwitch(UiSmokeTestCase):
+    """Tests for switching folders in the middle of the flow."""
+
+    def test_set_folder_resets_previous_scan_state(self):
+        """Test: choosing a new folder clears the old results."""
+        record = ui_flow.FileRecord(
+            "a.jpg", "a.jpg", "2024-05-10 08:00:00", "MD used", None, None
+        )
+        self.window._records = [record]  # pylint: disable=protected-access
+        self.window._summary = ui_flow.ScanSummary(total=1, fixable=1)  # pylint: disable=protected-access
+        self.window._preview_done = True  # pylint: disable=protected-access
+        self.window.scan_fix.setEnabled(True)
+        self.window.scan_table.setRowCount(3)
+        self.window.scan_status.setText("vecchio stato")
+        self.window.fix_preview.setPlainText("vecchia anteprima")
+        self.window.fix_result_label.setText("vecchio risultato")
+        self.window.fix_apply_btn.setEnabled(True)
+        self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
+        self.assertEqual(self.window._records, [])
+        self.assertIsNone(self.window._summary)
+        self.assertFalse(self.window._preview_done)
+        self.assertFalse(self.window.scan_fix.isEnabled())
+        self.assertEqual(self.window.scan_table.rowCount(), 0)
+        self.assertEqual(self.window.scan_status.text(), "")
+        self.assertEqual(self.window.fix_preview.toPlainText(), "")
+        self.assertEqual(self.window.fix_result_label.text(), "")
+        self.assertFalse(self.window.fix_apply_btn.isEnabled())
+
+    def test_set_folder_blocked_while_job_running(self):
+        """Test: a folder change during a running job is rejected."""
+        self.window.folder = None
+        self.window._thread = FakeThread()  # pylint: disable=protected-access
+        self.window._set_folder(self.temp_dir)  # pylint: disable=protected-access
+        self.assertIsNone(self.window.folder)
+        self.assertIn("Attendi", self.window.statusBar().currentMessage())
+
+
 class TestDonePage(UiSmokeTestCase):
     """Tests for the celebratory done page."""
 
     def test_done_page_shows_summary_cards(self):
-        """Test: the summary cards show the fix counts."""
-        result = ui_flow.FixResult(processed=21, fixed=7)
+        """Test: the cards mirror the whole scan, not only the fixed files."""
+        self.window._summary = ui_flow.ScanSummary(total=21, ok=12, fixable=7, no_date=2)  # pylint: disable=protected-access
+        result = ui_flow.FixResult(processed=7, fixed=7)
         self.window._on_fix_done(result)  # pylint: disable=protected-access
         values = self.window.done_values
         self.assertEqual(values["processed"].text(), "21")
         self.assertEqual(values["fixed"].text(), "7")
-        self.assertEqual(values["left"].text(), "14")
+        self.assertEqual(values["left"].text(), "2")
+        self.assertIn("2 file senza una data", self.window.done_label.text())
+        self.assertNotIn("Attenzione", self.window.done_label.text())
+
+    def test_done_page_separates_errors_from_no_date(self):
+        """Test: real errors and files left without a date are distinct."""
+        self.window._summary = ui_flow.ScanSummary(total=21, ok=12, fixable=7, no_date=2)  # pylint: disable=protected-access
+        result = ui_flow.FixResult(
+            processed=7, fixed=5, errors=["EXIF error: a.jpg"]
+        )
+        self.window._on_fix_done(result)  # pylint: disable=protected-access
+        label = self.window.done_label.text()
+        self.assertIn("non sono stati corretti", label)
+        self.assertIn("2 file senza una data", label)
+        self.assertEqual(self.window.done_values["fixed"].text(), "5")
 
 
 if __name__ == "__main__":

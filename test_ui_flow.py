@@ -222,5 +222,76 @@ class TestHelpers(UiFlowTestCase):
         self.assertEqual(ui_flow.capture_output(printer), ["hello", "world"])
 
 
+class TestFixDatesFilepaths(UiFlowTestCase):
+    """Tests for the fixable-only mode of fix_dates (filepaths=…)."""
+
+    def test_fix_only_the_given_filepaths(self):
+        """Test: only the listed files are processed and counted."""
+        tags = {"md.jpg": ["ModifyDate"]}
+        with patch.object(
+            core.subprocess, "run", side_effect=fake_exif_run(tags)
+        ):
+            result = ui_flow.fix_dates(
+                dry_run=True,
+                filepaths=["Google Foto/Album vacanze/md.jpg"],
+            )
+        self.assertEqual(result.processed, 1)
+        self.assertEqual(result.fixed, 1)
+        self.assertEqual(result.errors, [])
+        self.assertFalse(result.cancelled)
+
+    def test_scan_then_fix_only_fixable(self):
+        """Test: fixing only the FIXABLE files matches the scan counts."""
+        tags = {
+            "ok.jpg": ["DateTimeOriginal"],
+            "md.jpg": ["ModifyDate"],
+            "json.jpg": [],
+            "nothing.jpg": [],
+        }
+        with patch.object(core.subprocess, "run", side_effect=fake_exif_run(tags)):
+            summary, records = ui_flow.scan_folder()
+        self.assertEqual(summary.fixable, 2)
+        fixable = [r.filepath for r in records if r.status == ui_flow.FIXABLE]
+        with patch.object(core.subprocess, "run", side_effect=fake_exif_run(tags)):
+            result = ui_flow.fix_dates(dry_run=False, filepaths=fixable)
+        self.assertEqual(result.processed, 2)
+        self.assertEqual(result.fixed, 2)
+        self.assertEqual(result.errors, [])
+
+
+class TestToolWrappers(UiFlowTestCase):
+    """Tests for the ui_flow wrappers of the CLI tool operations."""
+
+    def test_move_json_returns_printed_lines(self):
+        """Test: move_json captures and returns the core output."""
+        lines = ["moving a.json", "moving b.json"]
+
+        def fake_move(dry_run):
+            print("\n".join(lines))
+
+        with patch.object(core, "move_json_files", side_effect=fake_move):
+            self.assertEqual(ui_flow.move_json(), lines)
+
+    def test_rollback_json_returns_printed_lines(self):
+        """Test: rollback_json captures and returns the core output."""
+        lines = ["restoring a.json"]
+
+        def fake_rollback(dry_run):
+            print("\n".join(lines))
+
+        with patch.object(core, "rollback_json_files", side_effect=fake_rollback):
+            self.assertEqual(ui_flow.rollback_json(), lines)
+
+    def test_create_albums_returns_printed_lines(self):
+        """Test: create_albums captures and returns the core output."""
+        lines = ["album Album vacanze created"]
+
+        def fake_create(dry_run):
+            print("\n".join(lines))
+
+        with patch.object(core, "create_albums", side_effect=fake_create):
+            self.assertEqual(ui_flow.create_albums(), lines)
+
+
 if __name__ == "__main__":
     unittest.main()

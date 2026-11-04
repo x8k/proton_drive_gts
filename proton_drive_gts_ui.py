@@ -23,12 +23,15 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtSvg import QSvgRenderer
 
-import proton_drive_gts as core
 import ui_flow
 
 APP_NAME = "Sistema le foto per Proton Drive"
 MAX_TABLE_ROWS = 500
 BADGE_PATH_LENGTH = 60
+DROP_ZONE_HIGHLIGHT_QSS = (
+    "QFrame#dropZone { background: #f1eefe; border: 2px dashed #6d4aff; "
+    "border-radius: 12px; }"
+)
 
 ICONS = {
     "camera": (
@@ -293,6 +296,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self._records = []
         self._summary = None
         self._fix_result = None
+        self._preview_done = False
         # Wizard pages and widgets, created by _build_pages().
         self.page_welcome = None
         self.page_scan = None
@@ -302,6 +306,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.welcome_folder_label = None
         self.welcome_targets_label = None
         self.welcome_analyze = None
+        self.welcome_drop_zone = None
         self.scan_status = None
         self.scan_progress = None
         self.scan_cards = None
@@ -421,6 +426,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         zone_sub.setAlignment(Qt.AlignCenter)
         zone_layout.addWidget(zone_title)
         zone_layout.addWidget(zone_sub)
+        self.welcome_drop_zone = drop_zone
         card.body.addWidget(drop_zone)
         layout.addWidget(card)
 
@@ -484,6 +490,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.scan_fix = QtWidgets.QPushButton("  Correggi le date")
         self.scan_fix.setIcon(svg_icon("wrench", "#ffffff"))
         self.scan_fix.setMinimumHeight(44)
+        self.scan_fix.setEnabled(False)
         self.scan_fix.clicked.connect(self._show_fix_page)
         buttons = QtWidgets.QHBoxLayout()
         buttons.addWidget(back)
@@ -511,6 +518,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.fix_intro.setWordWrap(True)
         self.fix_preview = QtWidgets.QTextEdit()
         self.fix_preview.setReadOnly(True)
+        self.fix_preview.setPlaceholderText("L'anteprima apparirà qui.")
         self.fix_progress = ProgressArea()
         self.fix_progress.cancel_requested = self._cancel_job
         self.fix_result_label = QtWidgets.QLabel("")
@@ -525,12 +533,18 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         apply_btn.clicked.connect(self._apply_fixes)
         self.fix_preview_btn = preview
         self.fix_apply_btn = apply_btn
+        back = QtWidgets.QPushButton("Torna all'analisi")
+        back.setObjectName("secondary")
+        back.clicked.connect(lambda: self._goto(self.page_scan))
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addWidget(preview)
+        buttons.addWidget(apply_btn)
+        buttons.addWidget(back)
         card.body.addWidget(self.fix_intro)
         card.body.addWidget(self.fix_preview)
         card.body.addWidget(self.fix_progress)
         card.body.addWidget(self.fix_result_label)
-        card.body.addWidget(preview)
-        card.body.addWidget(apply_btn)
+        card.body.addLayout(buttons)
         layout.addWidget(card)
         layout.addStretch()
         return page
@@ -685,13 +699,26 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         """Accept the drag when it carries at least one local folder."""
         if self._first_local_dir(event.mimeData().urls()) is not None:
             event.acceptProposedAction()
+            self._set_drop_highlight(True)
+
+    def dragLeaveEvent(self, event) -> None:  # pylint: disable=invalid-name,unused-argument
+        """Remove the drop-zone highlight when the drag leaves the window."""
+        self._set_drop_highlight(False)
 
     def dropEvent(self, event) -> None:  # pylint: disable=invalid-name
         """Use the first dropped local folder as the export folder."""
+        self._set_drop_highlight(False)
         folder = self._first_local_dir(event.mimeData().urls())
         if folder:
             self._set_folder(folder)
             event.acceptProposedAction()
+
+    def _set_drop_highlight(self, active: bool) -> None:
+        """Highlight the welcome drop zone while a folder hovers over it."""
+        if self.welcome_drop_zone is not None:
+            self.welcome_drop_zone.setStyleSheet(
+                DROP_ZONE_HIGHLIGHT_QSS if active else ""
+            )
 
     @staticmethod
     def _first_local_dir(urls) -> "str | None":
@@ -705,8 +732,24 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
 
     def _set_folder(self, folder: str) -> None:
         """Point the tool at a folder and show what was found in it."""
+        if self._thread is not None and self._thread.isRunning():
+            self.statusBar().showMessage(
+                "Attendi la fine dell'operazione in corso.", 4000
+            )
+            return
         self.folder = folder
         os.chdir(folder)
+        # A new folder invalidates every previous scan result.
+        self._records = []
+        self._summary = None
+        self._fix_result = None
+        self._preview_done = False
+        self.scan_status.setText("")
+        self.scan_table.setRowCount(0)
+        self.scan_fix.setEnabled(False)
+        self.fix_preview.clear()
+        self.fix_result_label.setText("")
+        self.fix_apply_btn.setEnabled(False)
         targets = ui_flow.existing_target_dirs()
         self.welcome_folder_label.setText(f"Cartella: {folder}")
         if targets:
@@ -722,6 +765,8 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
 
     def _start_scan(self) -> None:
         """Analyze the folder in the background."""
+        self._goto(self.page_scan)
+        self.scan_fix.setEnabled(False)
         self.scan_status.setText("Analisi in corso…")
         self.scan_progress.start(cancellable=True)
         self.scan_table.setRowCount(0)
@@ -764,6 +809,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
     def _show_fix_page(self) -> None:
         """Show the fix page with the plan for this folder."""
         counts = self._summary.counts()
+        self._preview_done = False
         self.fix_intro.setText(
             f"Verranno corrette le date di {counts['fixable']} file su "
             f"{counts['total']}. La data viene presa dall'EXIF, dai file JSON "
@@ -774,6 +820,10 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.fix_apply_btn.setEnabled(False)
         self._goto(self.page_fix)
 
+    def _fixable_filepaths(self) -> list:
+        """Return the file paths of the fixable records of the last scan."""
+        return [r.filepath for r in self._records if r.status == ui_flow.FIXABLE]
+
     def _start_preview(self) -> None:
         """Run a dry-run and show the planned changes."""
         self.fix_progress.start(cancellable=True)
@@ -783,6 +833,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
             self._on_preview_done,
             self._on_job_failed,
             dry_run=True,
+            filepaths=self._fixable_filepaths(),
         )
 
     def _on_preview_done(self, result) -> None:
@@ -791,6 +842,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         self.fix_result_label.setText("")
         if result is None:
             return
+        self._preview_done = True
         rows = self._preview_rows()
         doc = (
             f"<div style='margin-bottom:6px;color:#1a1625'>Verranno corretti "
@@ -851,6 +903,7 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
             self._on_fix_done,
             self._on_job_failed,
             dry_run=False,
+            filepaths=self._fixable_filepaths(),
         )
 
     def _on_fix_done(self, result) -> None:
@@ -862,14 +915,25 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
             self.fix_result_label.setText("Correzione interrotta.")
             self.fix_apply_btn.setEnabled(True)
             return
-        left = result.processed - result.fixed
-        self.done_values["processed"].setText(str(result.processed))
+        # The cards reflect the whole scan: only the fixable files were
+        # processed, and the files without a findable date are counted
+        # separately from the ones that failed with an error.
+        counts = self._summary.counts() if self._summary else {}
+        processed = counts.get("total", result.processed)
+        left = counts.get("no_date", processed - result.fixed)
+        self.done_values["processed"].setText(str(processed))
         self.done_values["fixed"].setText(str(result.fixed))
         self.done_values["left"].setText(str(left))
         message = (
             "Tutto fatto! Prossimo passo: importa le foto in Proton Drive "
             "(proton.me/drive/import)."
         )
+        failed = result.processed - result.fixed
+        if failed and result.errors:
+            message = (
+                f"Attenzione: {failed} file non sono stati corretti per "
+                f"errori (dettagli nel registro).\n\n{message}"
+            )
         if left:
             message = (
                 f"{left} file senza una data trovabile sono stati lasciati "
@@ -917,27 +981,30 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         """Move the JSON metadata files."""
         self.tools_progress.start(cancellable=False)
         self._start_job(
-            lambda progress, cancel: ui_flow.capture_output(core.move_json_files, False),
+            ui_flow.move_json,
             self._on_tools_done,
             self._on_job_failed,
+            dry_run=False,
         )
 
     def _rollback_json(self) -> None:
         """Restore the JSON metadata files."""
         self.tools_progress.start(cancellable=False)
         self._start_job(
-            lambda progress, cancel: ui_flow.capture_output(core.rollback_json_files, False),
+            ui_flow.rollback_json,
             self._on_tools_done,
             self._on_job_failed,
+            dry_run=False,
         )
 
     def _create_albums(self) -> None:
         """Create the Proton Drive albums."""
         self.tools_progress.start(cancellable=False)
         self._start_job(
-            lambda progress, cancel: ui_flow.capture_output(core.create_albums, False),
+            ui_flow.create_albums,
             self._on_tools_done,
             self._on_job_failed,
+            dry_run=False,
         )
 
     def _on_tools_done(self, result) -> None:
@@ -983,9 +1050,12 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         return handle
 
     def _on_job_failed(self, message: str) -> None:
-        """Report a job failure to the user."""
+        """Report a job failure and restore the wizard navigation."""
         for area in (self.scan_progress, self.fix_progress, self.tools_progress):
             area.finish()
+        self.fix_preview_btn.setEnabled(True)
+        if self._preview_done:
+            self.fix_apply_btn.setEnabled(True)
         QtWidgets.QMessageBox.critical(
             self,
             "Errore",
@@ -996,6 +1066,15 @@ class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-at
         """Request cooperative cancellation of the running job."""
         if self._worker is not None:
             self._worker.cancel.set()
+
+    def closeEvent(self, event) -> None:  # pylint: disable=invalid-name
+        """Stop the running job and its thread before the window closes."""
+        if self._worker is not None:
+            self._worker.cancel.set()
+        if self._thread is not None:
+            self._thread.quit()
+            self._thread.wait(2000)
+        event.accept()
 
 
 def parse_args() -> argparse.Namespace:
@@ -1013,11 +1092,19 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     """Start the application."""
     args = parse_args()
+    folder = args.folder
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(STYLESHEET)
     app.setApplicationName(APP_NAME)
     app.setWindowIcon(svg_icon("camera"))
-    window = MainWindow(args.folder)
+    if folder and not Path(folder).is_dir():
+        QtWidgets.QMessageBox.critical(
+            None,
+            "Errore",
+            f"La cartella indicata non esiste:\n{folder}",
+        )
+        folder = None
+    window = MainWindow(folder)
     window.show()
     sys.exit(app.exec())
 

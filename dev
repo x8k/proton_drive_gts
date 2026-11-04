@@ -27,7 +27,7 @@ ensure_deps() {
 run_tests() {
     ensure_deps
     echo "=== Running Tests ==="
-    QT_QPA_PLATFORM=offscreen python3 -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py -v
+    QT_QPA_PLATFORM=offscreen python3 -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py test_ui_canary.py -v
 }
 
 run_linter() {

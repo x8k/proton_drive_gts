@@ -27,4 +27,4 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py -v
+          python -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py test_ui_canary.py -v

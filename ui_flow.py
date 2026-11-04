@@ -138,21 +138,29 @@ def record_lines(records: List[FileRecord], missing_only: bool = True) -> List[s
 def fix_dates(
     dry_run: bool,
     file_list: Optional[str] = None,
+    filepaths: Optional[List[str]] = None,
     progress: Optional[ProgressCallback] = None,
     cancel: Optional[threading.Event] = None,
 ) -> FixResult:
-    """Fix the creation dates of the collected files.
+    """Fix the creation dates of the given files (or of the whole tree).
 
-    Runs the same per-file logic as the CLI --set mode, counting fixed
-    files and collecting error lines. set_file_dates prints something
-    only for files that could not be fixed.
+    When `filepaths` is given, exactly those files are processed: the
+    wizard passes the fixable records of its scan so the counts match
+    what the user was shown. Otherwise the files come from file_list or
+    from a walk of the current directory. Runs the same per-file logic
+    as the CLI --set mode, counting fixed files and collecting error
+    lines.
     """
-    from_list = file_list is not None
-    filepaths = core.collect_files(from_list, file_list)
-    total = len(filepaths)
-    operazione = "FROM_LIST" if from_list else "FROM_WALK"
+    if filepaths is not None:
+        paths = list(filepaths)
+        operazione = "FROM_LIST"
+    else:
+        from_list = file_list is not None
+        paths = core.collect_files(from_list, file_list)
+        operazione = "FROM_LIST" if from_list else "FROM_WALK"
+    total = len(paths)
     result = FixResult()
-    for filepath in filepaths:
+    for filepath in paths:
         if cancel is not None and cancel.is_set():
             result.cancelled = True
             return result
@@ -192,6 +200,28 @@ def capture_output(fn, *args) -> List[str]:
     with contextlib.redirect_stdout(buffer):
         fn(*args)
     return [line for line in buffer.getvalue().splitlines() if line]
+
+
+def move_json(dry_run: bool = False, progress=None, cancel=None) -> List[str]:
+    """Move the JSON metadata files, returning the printed output.
+
+    The UI worker calls this with progress/cancel keywords; the core
+    operation does not support them, so they are accepted and ignored.
+    """
+    del progress, cancel
+    return capture_output(core.move_json_files, dry_run)
+
+
+def rollback_json(dry_run: bool = False, progress=None, cancel=None) -> List[str]:
+    """Restore the JSON metadata files, returning the printed output."""
+    del progress, cancel
+    return capture_output(core.rollback_json_files, dry_run)
+
+
+def create_albums(dry_run: bool = False, progress=None, cancel=None) -> List[str]:
+    """Create the Proton Drive albums, returning the printed output."""
+    del progress, cancel
+    return capture_output(core.create_albums, dry_run)
 
 
 class OperationCancelled(Exception):
