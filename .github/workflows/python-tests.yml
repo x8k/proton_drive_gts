@@ -27,4 +27,8 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py test_ui_canary.py -v
+          set -o pipefail
+          python -m pytest test_proton_drive_gts.py test_ui_flow.py test_proton_drive_gts_ui.py test_ui_canary.py -v 2>&1 | tee pytest_output.txt
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat pytest_output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

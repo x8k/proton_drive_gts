@@ -254,7 +254,7 @@ class TestFixableFilepaths(UiSmokeTestCase):
         with patch.object(ui_flow, "fix_dates", side_effect=fake_fix):
             self.window._start_preview()  # pylint: disable=protected-access
             self.assertTrue(
-                wait_until(lambda: self.window.fix_apply_btn.isEnabled())
+                wait_until(self.window.fix_apply_btn.isEnabled)
             )
         self.assertEqual(seen.get("filepaths"), ["fix.jpg"])
         self.assertTrue(seen.get("dry_run"))
@@ -287,7 +287,7 @@ class TestFailureRecovery(UiSmokeTestCase):
 class FakeThread:
     """Minimal stand-in for a busy QThread."""
 
-    def isRunning(self):
+    def isRunning(self):  # pylint: disable=invalid-name
         """Pretend the job thread is busy."""
         return True
 

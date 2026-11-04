@@ -281,7 +281,7 @@ class StepIndicator(QtWidgets.QWidget):  # pylint: disable=too-few-public-method
                 name.setStyleSheet("color:#9b94b8;")
 
 
-class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-attributes,too-many-public-methods,too-few-public-methods
+class MainWindow(QtWidgets.QMainWindow):  # pylint: disable=too-many-instance-attributes,too-many-public-methods,too-few-public-methods,too-many-statements
     """The wizard main window: a stack of pages plus a shared job runner."""
 
     def __init__(self, folder: str = None):
